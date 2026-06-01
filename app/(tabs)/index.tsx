@@ -46,7 +46,7 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.headerActions}>
-              <Pressable style={styles.iconButton}>
+              <Pressable style={styles.iconButton} onPress={() => router.push('/reminder')}>
                 <Ionicons
                   name="notifications-outline"
                   size={20}
@@ -159,7 +159,7 @@ export default function HomeScreen() {
 
         <Pressable
           style={[styles.addButton, { bottom: insets.bottom + 74 }]}
-          onPress={() => router.push("/add-medication")}
+          onPress={() => router.push("/medicines/new")}
         >
           <Ionicons name="add" size={28} color="#FFFFFF" />
         </Pressable>

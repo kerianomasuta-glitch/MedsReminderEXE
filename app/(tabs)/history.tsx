@@ -1,33 +1,53 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { historyDetail, historyScores } from '@/constants/meds-data';
-import { MedsTheme } from '@/constants/meds-theme';
+import { historyDetail, historyScores } from "@/constants/meds-data";
+import { MedsTheme } from "@/constants/meds-theme";
 
-const dates = ['12', '13', '14', '15', '16', '17', 'CN 18'];
+const dates = ["12", "13", "14", "15", "16", "17", "CN 18"];
 
 export default function HistoryScreen() {
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerRow}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={16} color={MedsTheme.colors.primaryDark} />
+            <Ionicons
+              name="person"
+              size={16}
+              color={MedsTheme.colors.primaryDark}
+            />
           </View>
-          <Text style={styles.user}>MediTime</Text>
+          <Text style={styles.user}>MedsReminder</Text>
           <View style={{ flex: 1 }} />
-          <Ionicons name="notifications-outline" size={20} color={MedsTheme.colors.primaryDark} />
+          <Ionicons
+            name="notifications-outline"
+            size={20}
+            color={MedsTheme.colors.primaryDark}
+          />
         </View>
 
         <Text style={styles.title}>Lịch sử uống thuốc</Text>
-        <Text style={styles.subtitle}>Xem lại tiến độ và tỷ lệ tuần thủ của bạn.</Text>
+        <Text style={styles.subtitle}>
+          Xem lại tiến độ và tỷ lệ tuần thủ của bạn.
+        </Text>
 
         <View style={styles.dateStrip}>
           {dates.map((date, idx) => (
-            <View key={date} style={[styles.datePill, idx === 4 && styles.datePillActive]}>
-              <Text style={[styles.dateText, idx === 4 && styles.dateTextActive]}>{date}</Text>
+            <View
+              key={date}
+              style={[styles.datePill, idx === 4 && styles.datePillActive]}
+            >
+              <Text
+                style={[styles.dateText, idx === 4 && styles.dateTextActive]}
+              >
+                {date}
+              </Text>
             </View>
           ))}
         </View>
@@ -36,7 +56,9 @@ export default function HistoryScreen() {
           <Text style={styles.progressTitle}>Tỷ lệ tuần thủ tuần này</Text>
           <View style={styles.circleWrap}>
             <View style={styles.circle}>
-              <Text style={styles.circlePercent}>{historyScores.weeklyPercent}%</Text>
+              <Text style={styles.circlePercent}>
+                {historyScores.weeklyPercent}%
+              </Text>
               <Text style={styles.circleSub}>Tuyệt vời</Text>
             </View>
           </View>
@@ -62,16 +84,33 @@ export default function HistoryScreen() {
           <Pressable
             key={item.id}
             style={styles.detailCard}
-            onPress={() => router.push({ pathname: '/medication/[id]', params: { id: item.id } })}>
+            onPress={() =>
+              router.push({
+                pathname: "/medication/[id]",
+                params: { id: item.id },
+              })
+            }
+          >
             <View style={styles.detailIcon}>
-              <Ionicons name="sunny" size={15} color={MedsTheme.colors.primaryDark} />
+              <Ionicons
+                name="sunny"
+                size={15}
+                color={MedsTheme.colors.primaryDark}
+              />
             </View>
             <View style={styles.detailInfo}>
               <Text style={styles.detailTime}>{item.time}</Text>
               <Text style={styles.detailName}>{item.name}</Text>
             </View>
-            <View style={[styles.resultBadge, item.status === 'taken' ? styles.badgeTaken : styles.badgeLate]}>
-              <Text style={styles.resultBadgeText}>{item.status === 'taken' ? 'Đã uống' : 'Trễ giờ'}</Text>
+            <View
+              style={[
+                styles.resultBadge,
+                item.status === "taken" ? styles.badgeTaken : styles.badgeLate,
+              ]}
+            >
+              <Text style={styles.resultBadgeText}>
+                {item.status === "taken" ? "Đã uống" : "Trễ giờ"}
+              </Text>
             </View>
           </Pressable>
         ))}
@@ -91,8 +130,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 14,
     gap: 10,
   },
@@ -100,18 +139,18 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#D7EDF9',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#D7EDF9",
+    alignItems: "center",
+    justifyContent: "center",
   },
   user: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: MedsTheme.colors.textMain,
   },
   title: {
     fontSize: 30,
-    fontWeight: '800',
+    fontWeight: "800",
     color: MedsTheme.colors.textMain,
   },
   subtitle: {
@@ -126,8 +165,8 @@ const styles = StyleSheet.create({
     borderColor: MedsTheme.colors.border,
     paddingVertical: 12,
     paddingHorizontal: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 14,
   },
   datePill: {
@@ -135,18 +174,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 10,
     minWidth: 36,
-    alignItems: 'center',
+    alignItems: "center",
   },
   datePillActive: {
     backgroundColor: MedsTheme.colors.primary,
   },
   dateText: {
     color: MedsTheme.colors.textMuted,
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 13,
   },
   dateTextActive: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   progressCard: {
     borderRadius: 16,
@@ -157,11 +196,11 @@ const styles = StyleSheet.create({
   },
   progressTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: MedsTheme.colors.textMain,
   },
   circleWrap: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 16,
   },
   circle: {
@@ -170,59 +209,59 @@ const styles = StyleSheet.create({
     borderRadius: 83,
     borderWidth: 10,
     borderColor: MedsTheme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8FBFF',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FBFF",
   },
   circlePercent: {
     fontSize: 36,
-    fontWeight: '800',
+    fontWeight: "800",
     color: MedsTheme.colors.textMain,
   },
   circleSub: {
     marginTop: 2,
     color: MedsTheme.colors.primaryDark,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statsRow: {
     marginTop: 12,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   statCard: {
     flex: 1,
     borderRadius: 12,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
   },
   statOnTime: {
-    backgroundColor: '#EAF4FF',
-    borderColor: '#CFE4FF',
+    backgroundColor: "#EAF4FF",
+    borderColor: "#CFE4FF",
   },
   statLate: {
-    backgroundColor: '#FFF4E8',
-    borderColor: '#FFE4C1',
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FFE4C1",
   },
   statSkip: {
-    backgroundColor: '#FFF1F1',
-    borderColor: '#FFCECE',
+    backgroundColor: "#FFF1F1",
+    borderColor: "#FFCECE",
   },
   statNum: {
-    fontWeight: '800',
+    fontWeight: "800",
     fontSize: 25,
     color: MedsTheme.colors.textMain,
   },
   statLabel: {
     marginTop: 2,
     color: MedsTheme.colors.textMuted,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   todayTitle: {
     marginTop: 18,
     marginBottom: 10,
     fontSize: 23,
-    fontWeight: '700',
+    fontWeight: "700",
     color: MedsTheme.colors.textMain,
   },
   detailCard: {
@@ -231,8 +270,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: MedsTheme.colors.border,
     padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     marginBottom: 8,
   },
@@ -240,16 +279,16 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#EAF2FF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#EAF2FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   detailInfo: {
     flex: 1,
   },
   detailTime: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: MedsTheme.colors.textMain,
   },
   detailName: {
@@ -262,14 +301,14 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   badgeTaken: {
-    backgroundColor: '#DDF5E8',
+    backgroundColor: "#DDF5E8",
   },
   badgeLate: {
-    backgroundColor: '#FFEBD4',
+    backgroundColor: "#FFEBD4",
   },
   resultBadgeText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     color: MedsTheme.colors.textMain,
   },
 });

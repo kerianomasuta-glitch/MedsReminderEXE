@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,7 +24,14 @@ export default function MedicationDetailScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Pressable hitSlop={10}>
+            <Pressable
+              hitSlop={10}
+              onPress={() =>
+                router.push({
+                  pathname: '/medicines/[id]/edit',
+                  params: { id },
+                })
+              }>
               <Ionicons name="create-outline" size={20} color={MedsTheme.colors.textMain} />
             </Pressable>
           ),

@@ -1,73 +1,51 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { MedsTheme } from "@/constants/meds-theme";
+import { BrandHeader } from '@/components/meds/ui-kit';
+import { MedsTheme } from '@/constants/meds-theme';
+
+const menuItems = [
+  { label: 'Hồ sơ sức khỏe', icon: 'person-outline', route: '/profile-health', danger: false },
+  { label: 'Quản lý lịch uống', icon: 'calendar-outline', route: '/schedule', danger: false },
+  { label: 'Người thân theo dõi', icon: 'people-outline', route: '/caregivers', danger: false },
+  { label: 'Lịch tái khám', icon: 'medkit-outline', route: '/appointments/index', danger: false },
+  { label: 'Báo cáo tuân thủ', icon: 'stats-chart-outline', route: '/reports', danger: false },
+  { label: 'Cài đặt thông báo', icon: 'notifications-outline', route: '/settings/notifications', danger: false },
+  { label: 'Hỏi AI', icon: 'sparkles-outline', route: '/ai-assistant', danger: false },
+  { label: 'Đăng xuất', icon: 'log-out-outline', route: '/login', danger: true },
+] as const;
 
 export default function ProfileScreen() {
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.content}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topCard}>
-          <View style={styles.avatar}>
-            <Ionicons
-              name="person"
-              size={28}
-              color={MedsTheme.colors.primaryDark}
-            />
-          </View>
-          <Text style={styles.name}>MedsReminder User</Text>
-          <Text style={styles.role}>Nhắc lịch uống thuốc mỗi ngày</Text>
+          <BrandHeader slogan="Nhắc lịch uống thuốc mỗi ngày" />
         </View>
 
-        <Pressable
-          style={styles.rowButton}
-          onPress={() => router.push("/schedule")}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={18}
-            color={MedsTheme.colors.primaryDark}
-          />
-          <Text style={styles.rowButtonText}>Quản lý lịch uống</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={MedsTheme.colors.textMuted}
-          />
-        </Pressable>
-
-        <Pressable
-          style={styles.rowButton}
-          onPress={() => router.push("/history")}
-        >
-          <Ionicons
-            name="time-outline"
-            size={18}
-            color={MedsTheme.colors.primaryDark}
-          />
-          <Text style={styles.rowButtonText}>Lịch sử uống thuốc</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={MedsTheme.colors.textMuted}
-          />
-        </Pressable>
-
-        <Pressable style={styles.sosCard} onPress={() => router.push("/sos")}>
-          <View style={styles.sosIconWrap}>
-            <Ionicons name="warning" size={20} color="#FFFFFF" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.sosTitle}>Cảnh báo khẩn cấp</Text>
-            <Text style={styles.sosText}>
-              Mở nhanh SOS và cuộc gọi emergency
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-        </Pressable>
-      </View>
+        {menuItems.map((item) => (
+          <Pressable
+            key={item.label}
+            style={({ pressed, hovered }) => [styles.rowButton, (pressed || hovered) && styles.rowButtonActive]}
+            onPress={() => {
+              if (item.route === '/login') {
+                router.replace('/login');
+                return;
+              }
+              router.push(item.route);
+            }}>
+            <Ionicons
+              name={item.icon}
+              size={18}
+              color={item.danger ? MedsTheme.colors.danger : MedsTheme.colors.primaryDark}
+            />
+            <Text style={[styles.rowButtonText, item.danger && styles.dangerText]}>{item.label}</Text>
+            <Ionicons name="chevron-forward" size={18} color={MedsTheme.colors.textMuted} />
+          </Pressable>
+        ))}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -78,9 +56,9 @@ const styles = StyleSheet.create({
     backgroundColor: MedsTheme.colors.appBackground,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 14,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 40,
     gap: 10,
   },
   topCard: {
@@ -88,70 +66,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: MedsTheme.colors.border,
     backgroundColor: MedsTheme.colors.card,
-    alignItems: "center",
-    paddingVertical: 22,
-    marginBottom: 8,
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#D9EEFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  name: {
-    marginTop: 10,
-    color: MedsTheme.colors.textMain,
-    fontSize: 21,
-    fontWeight: "800",
-  },
-  role: {
-    marginTop: 2,
-    color: MedsTheme.colors.textMuted,
+    paddingVertical: 12,
+    marginBottom: 4,
   },
   rowButton: {
-    height: 52,
+    minHeight: 54,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: MedsTheme.colors.border,
     backgroundColor: MedsTheme.colors.card,
     paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
+  },
+  rowButtonActive: {
+    opacity: 0.9,
   },
   rowButtonText: {
     flex: 1,
     color: MedsTheme.colors.textMain,
-    fontWeight: "600",
+    fontWeight: '600',
     fontSize: 15,
   },
-  sosCard: {
-    marginTop: 6,
-    borderRadius: 14,
-    backgroundColor: "#D72839",
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  sosIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.24)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sosTitle: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  sosText: {
-    color: "#FFE8E8",
-    marginTop: 2,
-    fontSize: 13,
+  dangerText: {
+    color: MedsTheme.colors.danger,
   },
 });

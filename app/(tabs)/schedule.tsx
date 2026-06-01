@@ -37,7 +37,7 @@ export default function ScheduleScreen() {
           ))}
         </View>
 
-        <Pressable style={styles.primaryButton} onPress={() => router.push('/add-medication')}>
+        <Pressable style={styles.primaryButton} onPress={() => router.push('/medicines/new')}>
           <Ionicons name="add-circle" size={18} color="#FFFFFF" />
           <Text style={styles.primaryButtonText}>Thêm lịch uống thuốc</Text>
         </Pressable>
