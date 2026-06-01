@@ -16,9 +16,30 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="add-medication"
+          options={{
+            title: 'Thêm thuốc mới',
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="medication/[id]"
+          options={{
+            title: 'Chi tiết thuốc',
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="sos"
+          options={{
+            title: 'Emergency Help',
+            headerShadowVisible: false,
+          }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
     </ThemeProvider>
   );
 }
