@@ -1,40 +1,62 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { MedicationStatus, todayMedications, upcomingMedication } from '@/constants/meds-data';
-import { MedsTheme } from '@/constants/meds-theme';
+import {
+  MedicationStatus,
+  todayMedications,
+  upcomingMedication,
+} from "@/constants/meds-data";
+import { MedsTheme } from "@/constants/meds-theme";
 
 const statusLabel: Record<MedicationStatus, string> = {
-  taken: 'Đã uống',
-  upcoming: 'Sắp tới',
-  late: 'Trễ giờ',
-  missed: 'Bỏ qua',
+  taken: "Đã uống",
+  upcoming: "Sắp tới",
+  late: "Trễ giờ",
+  missed: "Bỏ qua",
 };
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 132 }]}>
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 132 },
+          ]}
+        >
           <View style={styles.headerRow}>
             <View style={styles.profileRow}>
               <View style={styles.avatar}>
-                <Ionicons name="person" size={16} color={MedsTheme.colors.primaryDark} />
+                <Ionicons
+                  name="person"
+                  size={16}
+                  color={MedsTheme.colors.primaryDark}
+                />
               </View>
-              <Text style={styles.userName}>MediTime</Text>
+              <Text style={styles.userName}>MedsReminder</Text>
             </View>
 
             <View style={styles.headerActions}>
               <Pressable style={styles.iconButton}>
-                <Ionicons name="notifications-outline" size={20} color={MedsTheme.colors.primaryDark} />
+                <Ionicons
+                  name="notifications-outline"
+                  size={20}
+                  color={MedsTheme.colors.primaryDark}
+                />
               </Pressable>
-              <Pressable style={styles.sosButton} onPress={() => router.push('/sos')}>
+              <Pressable
+                style={styles.sosButton}
+                onPress={() => router.push("/sos")}
+              >
                 <Ionicons name="warning" size={13} color="#FFFFFF" />
                 <Text style={styles.sosButtonText}>SOS</Text>
               </Pressable>
@@ -50,13 +72,21 @@ export default function HomeScreen() {
           <View style={styles.upcomingCard}>
             <View style={styles.upcomingHeader}>
               <View>
-                <Text style={styles.upcomingTime}>{upcomingMedication.time}</Text>
+                <Text style={styles.upcomingTime}>
+                  {upcomingMedication.time}
+                </Text>
                 <View style={styles.upcomingBadge}>
-                  <Text style={styles.upcomingBadgeText}>{upcomingMedication.reminderIn}</Text>
+                  <Text style={styles.upcomingBadgeText}>
+                    {upcomingMedication.reminderIn}
+                  </Text>
                 </View>
               </View>
               <View style={styles.pillIconWrap}>
-                <Ionicons name="medical" size={20} color={MedsTheme.colors.primarySoft} />
+                <Ionicons
+                  name="medical"
+                  size={20}
+                  color={MedsTheme.colors.primarySoft}
+                />
               </View>
             </View>
 
@@ -70,7 +100,7 @@ export default function HomeScreen() {
 
           <View style={styles.dayHeader}>
             <Text style={styles.groupLabel}>TẤT CẢ TRONG NGÀY</Text>
-            <Pressable onPress={() => router.push('/schedule')}>
+            <Pressable onPress={() => router.push("/schedule")}>
               <Text style={styles.seeAll}>Xem tất cả</Text>
             </Pressable>
           </View>
@@ -78,17 +108,26 @@ export default function HomeScreen() {
           {todayMedications.map((item) => (
             <Pressable
               key={item.id}
-              onPress={() => router.push({ pathname: '/medication/[id]', params: { id: item.id } })}
-              style={[styles.medicationCard, item.status === 'missed' && styles.missedCard]}>
+              onPress={() =>
+                router.push({
+                  pathname: "/medication/[id]",
+                  params: { id: item.id },
+                })
+              }
+              style={[
+                styles.medicationCard,
+                item.status === "missed" && styles.missedCard,
+              ]}
+            >
               <View style={styles.medicationLeft}>
                 <View style={styles.medicationIcon}>
                   <Ionicons
                     name={
-                      item.icon === 'medical'
-                        ? 'medkit'
-                        : item.icon === 'water'
-                          ? 'water'
-                          : 'medical'
+                      item.icon === "medical"
+                        ? "medkit"
+                        : item.icon === "water"
+                          ? "water"
+                          : "medical"
                     }
                     size={15}
                     color={MedsTheme.colors.primaryDark}
@@ -105,11 +144,12 @@ export default function HomeScreen() {
                 <Text
                   style={[
                     styles.statusText,
-                    item.status === 'taken' && styles.statusTaken,
-                    item.status === 'upcoming' && styles.statusUpcoming,
-                    item.status === 'late' && styles.statusLate,
-                    item.status === 'missed' && styles.statusMissed,
-                  ]}>
+                    item.status === "taken" && styles.statusTaken,
+                    item.status === "upcoming" && styles.statusUpcoming,
+                    item.status === "late" && styles.statusLate,
+                    item.status === "missed" && styles.statusMissed,
+                  ]}
+                >
                   {statusLabel[item.status]}
                 </Text>
               </View>
@@ -117,7 +157,10 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        <Pressable style={[styles.addButton, { bottom: insets.bottom + 74 }]} onPress={() => router.push('/add-medication')}>
+        <Pressable
+          style={[styles.addButton, { bottom: insets.bottom + 74 }]}
+          onPress={() => router.push("/add-medication")}
+        >
           <Ionicons name="add" size={28} color="#FFFFFF" />
         </Pressable>
       </View>
@@ -139,55 +182,55 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 6,
   },
   profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   avatar: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#D8EDF8',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#D8EDF8",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#C2DBED',
+    borderColor: "#C2DBED",
   },
   userName: {
     fontSize: 21,
-    fontWeight: '700',
+    fontWeight: "700",
     color: MedsTheme.colors.textMain,
   },
   headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   iconButton: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   sosButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: '#D72638',
+    backgroundColor: "#D72638",
     borderRadius: 16,
     paddingHorizontal: 12,
     height: 30,
   },
   sosButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: "#FFFFFF",
+    fontWeight: "800",
     fontSize: 12,
   },
   sectionHeader: {
@@ -195,7 +238,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 30,
-    fontWeight: '800',
+    fontWeight: "800",
     color: MedsTheme.colors.textMain,
   },
   sectionDate: {
@@ -206,84 +249,84 @@ const styles = StyleSheet.create({
   groupLabel: {
     fontSize: 14,
     color: MedsTheme.colors.textMuted,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.3,
   },
   upcomingCard: {
     borderRadius: MedsTheme.radius.lg,
-    backgroundColor: '#072C62',
+    backgroundColor: "#072C62",
     padding: 16,
-    shadowColor: '#001126',
+    shadowColor: "#001126",
     shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
   upcomingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   upcomingTime: {
     fontSize: 36,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   upcomingBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginTop: 6,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: "rgba(255,255,255,0.16)",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   upcomingBadgeText: {
-    color: '#D3E7FF',
+    color: "#D3E7FF",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   pillIconWrap: {
     width: 68,
     height: 60,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   upcomingName: {
     marginTop: 14,
     fontSize: 29,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   upcomingDose: {
     marginTop: 4,
     fontSize: 15,
-    color: '#D8E8FF',
+    color: "#D8E8FF",
   },
   doneButton: {
     marginTop: 16,
-    backgroundColor: '#3696FF',
+    backgroundColor: "#3696FF",
     borderRadius: 10,
     height: 42,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   doneButtonText: {
-    color: '#062C59',
-    fontWeight: '700',
+    color: "#062C59",
+    fontWeight: "700",
     fontSize: 16,
   },
   dayHeader: {
     marginTop: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   seeAll: {
     color: MedsTheme.colors.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   medicationCard: {
     backgroundColor: MedsTheme.colors.card,
@@ -292,17 +335,17 @@ const styles = StyleSheet.create({
     borderColor: MedsTheme.colors.border,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   missedCard: {
-    borderColor: '#F7BCC0',
-    backgroundColor: '#FFF3F4',
+    borderColor: "#F7BCC0",
+    backgroundColor: "#FFF3F4",
   },
   medicationLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     flex: 1,
     paddingRight: 8,
@@ -311,9 +354,9 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#E8F2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#E8F2FF",
+    justifyContent: "center",
+    alignItems: "center",
   },
   medicationInfo: {
     flex: 1,
@@ -321,7 +364,7 @@ const styles = StyleSheet.create({
   medicationName: {
     fontSize: 16,
     color: MedsTheme.colors.textMain,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   medicationDose: {
     marginTop: 2,
@@ -329,17 +372,17 @@ const styles = StyleSheet.create({
     color: MedsTheme.colors.textMuted,
   },
   medicationRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     gap: 6,
   },
   medicationTime: {
     fontSize: 14,
     color: MedsTheme.colors.textMain,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   statusTaken: {
     color: MedsTheme.colors.success,
@@ -354,15 +397,15 @@ const styles = StyleSheet.create({
     color: MedsTheme.colors.danger,
   },
   addButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 24,
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: '#0A0A0A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000000',
+    backgroundColor: "#0A0A0A",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000000",
     shadowOpacity: 0.24,
     shadowOffset: { width: 0, height: 5 },
     shadowRadius: 10,
