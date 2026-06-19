@@ -122,7 +122,7 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
           ))}
         </View>
 
-        {timesPerDay === 4 ? (
+        {timesPerDay >= 2 && timesPerDay <= 4 ? (
           <View style={styles.timesColumn}>
             {timesArray.map((t, idx) => (
               <TextField
