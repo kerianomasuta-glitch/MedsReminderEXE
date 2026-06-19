@@ -27,13 +27,11 @@ type TextFieldProps = TextInputProps & {
   hint?: string;
   error?: string;
 };
-type TextFieldExtra = TextFieldProps & { example?: string };
 
 type ChoiceChipProps = {
   label: string;
   active?: boolean;
   onPress?: () => void;
-  icon?: React.ReactNode;
 };
 
 const toneStyle = {
@@ -71,14 +69,13 @@ export function FieldLabel({ text }: { text: string }) {
   return <Text style={styles.fieldLabel}>{text}</Text>;
 }
 
-export function TextField({ label, hint, error, example, style, ...props }: TextFieldExtra & { style?: any }) {
+export function TextField({ label, hint, error, ...props }: TextFieldProps) {
   return (
     <View style={styles.fieldBlock}>
       <FieldLabel text={label} />
-      {example ? <Text style={styles.exampleText}>{example}</Text> : null}
       <TextInput
-        placeholderTextColor="#5B6B75"
-        style={[styles.input, error && styles.inputError, style]}
+        placeholderTextColor="#90A0B5"
+        style={[styles.input, error && styles.inputError]}
         {...props}
       />
       {hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
@@ -87,7 +84,7 @@ export function TextField({ label, hint, error, example, style, ...props }: Text
   );
 }
 
-export function ChoiceChip({ label, active, onPress, icon }: ChoiceChipProps) {
+export function ChoiceChip({ label, active, onPress }: ChoiceChipProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -96,7 +93,6 @@ export function ChoiceChip({ label, active, onPress, icon }: ChoiceChipProps) {
         active && styles.chipActive,
         (pressed || hovered) && styles.chipHover,
       ]}>
-      {icon ? <View style={styles.chipIconWrap}>{icon}</View> : null}
       <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
     </Pressable>
   );
@@ -195,10 +191,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 48,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: MedsTheme.colors.border,
     backgroundColor: '#FFFFFF',
@@ -212,21 +207,11 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: MedsTheme.colors.textMain,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  exampleText: {
-    color: MedsTheme.colors.textMain,
     fontSize: 13,
-    marginBottom: 6,
+    fontWeight: '600',
   },
   chipTextActive: {
     color: MedsTheme.colors.primaryDark,
-  },
-  chipIconWrap: {
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   button: {
     minHeight: 50,
