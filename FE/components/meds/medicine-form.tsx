@@ -144,7 +144,7 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
           </View>
         ) : (
           <TextField
-            label="Thời gian uống (phân tách dấu phẩy)"
+            label="Giờ 1"
             value={times}
             onChangeText={(val) => {
               setTimes(val);
