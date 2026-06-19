@@ -327,4 +327,7 @@ const styles = StyleSheet.create({
   editActions: {
     gap: 10,
   },
+  timesColumn: {
+    gap: 8,
+  },
 });
