@@ -35,6 +35,9 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
   const [name, setName] = useState(mode === 'edit' ? medication.name : '');
   const [dose, setDose] = useState(mode === 'edit' ? medication.dose : '');
   const [times, setTimes] = useState(mode === 'edit' ? `${medication.time}, 08:00 PM` : '07:00 AM, 01:00 PM, 06:00 PM');
+  const initialTimesArray = times.split(',').map((t) => t.trim()).filter(Boolean);
+  const [timesArray, setTimesArray] = useState<string[]>(initialTimesArray.length ? initialTimesArray : ['07:00 AM', '01:00 PM', '06:00 PM']);
+  const [timesPerDay, setTimesPerDay] = useState<number>(timesArray.length);
   const [instructions, setInstructions] = useState('Uống với nhiều nước. Không uống cùng sữa.');
   const [formType, setFormType] = useState<(typeof medicineTypeOptions)[number]>(
     mode === 'edit' ? initialFormType : 'Viên nén',
@@ -102,14 +105,56 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
 
       <SectionCard>
         <FieldLabel text="2. Lịch uống" />
-        <TextField label="Số lần uống trong ngày" value="3 lần/ngày" editable={false} />
-        <TextField
-          label="Thời gian uống (phân tách dấu phẩy)"
-          value={times}
-          onChangeText={setTimes}
-          placeholder="07:00 AM, 01:00 PM, 06:00 PM"
-          error={errors.times}
-        />
+        <FieldLabel text="Số lần uống trong ngày" />
+        <View style={styles.grid}>
+          {[1, 2, 3, 4].map((n) => (
+            <ChoiceChip key={n} label={`${n} lần/ngày`} active={n === timesPerDay} onPress={() => {
+              setTimesPerDay(n);
+              // adjust timesArray length
+              setTimesArray((prev) => {
+                const next = [...prev];
+                while (next.length < n) next.push('07:00 AM');
+                while (next.length > n) next.pop();
+                setTimes(next.join(', '));
+                return next;
+              });
+            }} />
+          ))}
+        </View>
+
+        {timesPerDay === 4 ? (
+          <View style={styles.timesColumn}>
+            {timesArray.map((t, idx) => (
+              <TextField
+                key={idx}
+                label={`Giờ ${idx + 1}`}
+                value={t}
+                onChangeText={(val) => {
+                  setTimesArray((prev) => {
+                    const next = [...prev];
+                    next[idx] = val;
+                    setTimes(next.join(', '));
+                    return next;
+                  });
+                }}
+                placeholder="07:00 AM"
+                style={{ marginBottom: 8 }}
+              />
+            ))}
+          </View>
+        ) : (
+          <TextField
+            label="Thời gian uống (phân tách dấu phẩy)"
+            value={times}
+            onChangeText={(val) => {
+              setTimes(val);
+              setTimesArray(val.split(',').map((s) => s.trim()).filter(Boolean));
+              setTimesPerDay(val.split(',').map((s) => s.trim()).filter(Boolean).length);
+            }}
+            placeholder="07:00 AM, 01:00 PM, 06:00 PM"
+            error={errors.times}
+          />
+        )}
         <TextField label="Ngày bắt đầu" value="2026-06-01" editable={false} />
 
         <Pressable
@@ -134,7 +179,7 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
           onChangeText={setInstructions}
           multiline
           numberOfLines={4}
-          style={styles.multiline}
+          style={[styles.multiline, { borderWidth: 1 }]}
         />
       </SectionCard>
 
