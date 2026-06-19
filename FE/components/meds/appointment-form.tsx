@@ -47,7 +47,14 @@ export function AppointmentForm({ mode, onSubmit, onCancel }: AppointmentFormPro
         <TextField label="Ngày khám" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" error={dateError} />
         <TextField label="Giờ khám" value={time} onChangeText={setTime} placeholder="09:00 AM" />
         <TextField label="Địa chỉ" value={address} onChangeText={setAddress} />
-        <TextField label="Ghi chú" value={note} onChangeText={setNote} multiline numberOfLines={4} style={{ minHeight: 88, textAlignVertical: 'top', paddingTop: 10 }} />
+        <TextField
+          label="Ghi chú"
+          value={note}
+          onChangeText={setNote}
+          multiline
+          numberOfLines={4}
+          style={{ minHeight: 88, textAlignVertical: 'top', paddingTop: 10, borderWidth: 1 }}
+        />
         <TextField label="Nhắc trước" value={remindBefore} onChangeText={setRemindBefore} hint="1 giờ, 1 ngày, 3 ngày hoặc tùy chỉnh" />
       </SectionCard>
 

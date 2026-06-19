@@ -70,13 +70,15 @@ export function FieldLabel({ text }: { text: string }) {
 }
 
 export function TextField({ label, hint, error, ...props }: TextFieldProps) {
+  // Merge built-in input styles with any style passed via props
+  const { style, ...rest } = props as any;
   return (
     <View style={styles.fieldBlock}>
       <FieldLabel text={label} />
       <TextInput
         placeholderTextColor="#90A0B5"
-        style={[styles.input, error && styles.inputError]}
-        {...props}
+        style={[styles.input, error && styles.inputError, style]}
+        {...rest}
       />
       {hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
