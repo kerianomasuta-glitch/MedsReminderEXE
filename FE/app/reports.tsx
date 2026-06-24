@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { ActionButton, AppScreen, ChoiceChip, PageHeader, SectionCard } from '@/components/meds/ui-kit';
-import { medicineMock, reportMock } from '@/constants/app-mock';
+import { medicineMock, reportChartValues, reportMock } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
 
 export default function ReportsScreen() {
   const [tab, setTab] = useState<'Ngày' | 'Tuần' | 'Tháng'>('Tuần');
   const [filter, setFilter] = useState('Tất cả');
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   return (
     <AppScreen>
@@ -34,7 +36,7 @@ export default function ReportsScreen() {
       <SectionCard>
         <Text style={styles.sectionTitle}>Biểu đồ đơn giản</Text>
         <View style={styles.chartRow}>
-          {[70, 88, 80, 92, 76, 85, 81].map((value, idx) => (
+          {reportChartValues.map((value, idx) => (
             <View key={`${value}-${idx}`} style={styles.barWrap}>
               <View style={[styles.bar, { height: Math.max(28, value) }]} />
               <Text style={styles.barLabel}>{idx + 1}</Text>
@@ -70,8 +72,13 @@ export default function ReportsScreen() {
         ))}
       </SectionCard>
 
-      <ActionButton label="Xuất báo cáo" />
-      <ActionButton label="Chia sẻ với người thân" tone="secondary" />
+      <ActionButton label="Xuất báo cáo" onPress={() => setActionMessage('Đã xuất báo cáo mẫu thành công.')} />
+      <ActionButton
+        label="Chia sẻ với người thân"
+        tone="secondary"
+        onPress={() => setActionMessage('Đã chia sẻ báo cáo mẫu cho người thân.')}
+      />
+      <FeedbackToast message={actionMessage} tone="info" onHide={() => setActionMessage(null)} />
     </AppScreen>
   );
 }

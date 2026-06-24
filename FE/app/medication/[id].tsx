@@ -1,8 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { MedsTheme } from '@/constants/meds-theme';
 
 const medicationNameById: Record<string, { name: string; subtitle: string }> = {
@@ -18,6 +20,7 @@ const medicationNameById: Record<string, { name: string; subtitle: string }> = {
 export default function MedicationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const display = medicationNameById[id] ?? medicationNameById['new-medication'];
+  const [feedbackText, setFeedbackText] = useState<string | null>(null);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -101,15 +104,20 @@ export default function MedicationDetailScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={styles.remindButton}>
+        <Pressable
+          style={styles.remindButton}
+          onPress={() => setFeedbackText('Đã đặt nhắc lại sau 15 phút cho thuốc này.')}>
           <Ionicons name="time-outline" size={16} color={MedsTheme.colors.primaryDark} />
           <Text style={styles.remindText}>Nhắc lại sau 15p</Text>
         </Pressable>
 
-        <Pressable style={styles.confirmButton}>
+        <Pressable
+          style={styles.confirmButton}
+          onPress={() => setFeedbackText('Đã xác nhận uống thuốc thành công.')}>
           <Ionicons name="checkmark" size={18} color="#FFFFFF" />
           <Text style={styles.confirmText}>Đã uống</Text>
         </Pressable>
+        <FeedbackToast message={feedbackText} onHide={() => setFeedbackText(null)} />
       </View>
     </SafeAreaView>
   );

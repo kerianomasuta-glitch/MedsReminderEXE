@@ -98,6 +98,98 @@ export const reportMock = {
   ],
 };
 
+export const reportChartValues = [70, 88, 80, 92, 76, 85, 81];
+
+export const adminSummaryMock = {
+  totalUsers: '1,240',
+  activeSchedules: '3,981',
+  todayAlerts: '73',
+  supportNeededAccounts: '9',
+};
+
+export const adminUsersMock = [
+  {
+    id: 'u1',
+    name: 'MedsReminder User',
+    contact: 'meds.user@example.com',
+    role: 'User',
+    status: 'Active',
+    createdAt: '2026-05-20',
+  },
+  {
+    id: 'u2',
+    name: 'Nguyễn Văn A',
+    contact: '0901234567',
+    role: 'Caregiver',
+    status: 'Active',
+    createdAt: '2026-05-18',
+  },
+  {
+    id: 'u3',
+    name: 'Trần B',
+    contact: 'tranb@example.com',
+    role: 'User',
+    status: 'Need support',
+    createdAt: '2026-05-11',
+  },
+];
+
+export const aiQuickSymptoms = ['Đau đầu', 'Sốt', 'Ho', 'Đau bụng', 'Chóng mặt', 'Khó thở'];
+
+export const aiResultMock = {
+  summary: 'Mệt nhẹ, ho và khó chịu đường hô hấp trên.',
+  possibleCause: 'Cảm lạnh/viêm họng do thay đổi thời tiết.',
+  initialCare: 'Nghỉ ngơi, uống nước ấm, theo dõi nhiệt độ.',
+  medicalVisitWhen: 'Kéo dài trên 3 ngày hoặc sốt cao liên tục.',
+  dangerWarning: 'Khó thở, đau ngực, ngất, lơ mơ.',
+};
+
+export const healthOptions = ['Huyết áp', 'Tiểu đường', 'Tim mạch', 'Hen suyễn', 'Khác'];
+
+export const profileMenuItems = [
+  { label: 'Hồ sơ sức khỏe', icon: 'person-outline', route: '/profile-health', danger: false },
+  { label: 'Quản lý lịch uống', icon: 'calendar-outline', route: '/schedule', danger: false },
+  { label: 'Người thân theo dõi', icon: 'people-outline', route: '/caregivers', danger: false },
+  { label: 'Lịch tái khám', icon: 'medkit-outline', route: '/appointments', danger: false },
+  { label: 'Báo cáo tuân thủ', icon: 'stats-chart-outline', route: '/reports', danger: false },
+  { label: 'Cài đặt thông báo', icon: 'notifications-outline', route: '/settings/notifications', danger: false },
+  { label: 'Hỏi AI', icon: 'sparkles-outline', route: '/ai-assistant', danger: false },
+  { label: 'Đăng xuất', icon: 'log-out-outline', route: '/login', danger: true },
+] as const;
+
+export const addMedicationTypeOptions = [
+  { id: 'capsule', label: 'Viên nang', icon: 'medical' },
+  { id: 'tablet', label: 'Viên nén', icon: 'square' },
+  { id: 'syrup', label: 'Syrups', icon: 'water' },
+  { id: 'other', label: 'Khác', icon: 'ellipsis-horizontal' },
+] as const;
+
+export const addMedicationNoteOptions = [
+  { id: 'before', label: 'Trước bữa ăn' },
+  { id: 'after', label: 'Sau bữa ăn' },
+  { id: 'during', label: 'Trong khi ăn' },
+] as const;
+
+export const historyDateStripMock = ['12', '13', '14', '15', '16', '17', 'CN 18'];
+
+export const reminderSkipReasons = ['Quên mang thuốc', 'Không muốn uống', 'Đã uống nhưng quên bấm', 'Khác'];
+
+export const caregiverPermissionOptions = ['Xem lịch uống cơ bản', 'Nhận cảnh báo khi quên thuốc', 'Xem báo cáo tuân thủ'];
+
+export const caregiverInviteMock = {
+  inviteCode: 'MEDS-2026-8821',
+  qrLabel: 'QR liên kết demo',
+};
+
+export const notificationCaregiverAlertOptions = ['15p', '30p', '60p'] as const;
+
+export const missedAlertMock = {
+  medicineName: 'Thuốc huyết áp',
+  dueTime: '06:00 PM',
+  lateDuration: '25 phút',
+  caregiverNotice: 'Cảnh báo sẽ được gửi cho người thân sau 15 phút nếu bạn chưa xác nhận.',
+};
+
 export const medicineTypeOptions = [
   'Viên nén',
   'Viên nang',

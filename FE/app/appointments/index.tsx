@@ -3,15 +3,17 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton, AppScreen, PageHeader, SectionCard } from '@/components/meds/ui-kit';
-import { appointmentMock } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
+import { useAppointments } from '@/store/appointments-store';
 
 export default function AppointmentsScreen() {
+  const appointments = useAppointments();
+
   return (
     <AppScreen>
       <PageHeader title="Lịch tái khám" subtitle="Theo dõi các lịch khám sắp tới và trạng thái thực hiện." />
 
-      {appointmentMock.map((item) => (
+      {appointments.map((item) => (
         <Pressable
           key={item.id}
           onPress={() =>

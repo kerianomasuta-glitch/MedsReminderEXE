@@ -1,12 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { emergencyContacts } from '@/constants/meds-data';
 import { MedsTheme } from '@/constants/meds-theme';
 
 export default function SosScreen() {
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
   const callEmergency = async () => {
     await Linking.openURL('tel:115');
   };
@@ -57,7 +61,7 @@ export default function SosScreen() {
               <Text style={styles.contactName}>{contact.name}</Text>
               <Text style={styles.contactRole}>{contact.role}</Text>
             </View>
-            <Pressable style={styles.callButton}>
+            <Pressable style={styles.callButton} onPress={callEmergency}>
               <Ionicons name="call" size={16} color="#FFFFFF" />
             </Pressable>
           </View>
@@ -86,10 +90,11 @@ export default function SosScreen() {
           <Ionicons name="medical" size={18} color="#FFFFFF" />
           <Text style={styles.ambulanceText}>Call Ambulance (115)</Text>
         </Pressable>
-        <Pressable style={styles.medicalIdButton}>
+        <Pressable style={styles.medicalIdButton} onPress={() => setStatusMessage('Đang hiển thị Medical ID (mock).')}>
           <Ionicons name="document-text-outline" size={17} color={MedsTheme.colors.primaryDark} />
           <Text style={styles.medicalIdText}>Show Medical ID</Text>
         </Pressable>
+        <FeedbackToast message={statusMessage} tone="info" onHide={() => setStatusMessage(null)} />
       </View>
     </SafeAreaView>
   );

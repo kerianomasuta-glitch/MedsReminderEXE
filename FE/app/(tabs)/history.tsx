@@ -3,10 +3,9 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { historyDateStripMock } from "@/constants/app-mock";
 import { historyDetail, historyScores } from "@/constants/meds-data";
 import { MedsTheme } from "@/constants/meds-theme";
-
-const dates = ["12", "13", "14", "15", "16", "17", "CN 18"];
 
 export default function HistoryScreen() {
   return (
@@ -38,7 +37,7 @@ export default function HistoryScreen() {
         </Text>
 
         <View style={styles.dateStrip}>
-          {dates.map((date, idx) => (
+          {historyDateStripMock.map((date, idx) => (
             <View
               key={date}
               style={[styles.datePill, idx === 4 && styles.datePillActive]}

@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { ActionButton, AppScreen, PageHeader, SectionCard } from '@/components/meds/ui-kit';
+import { missedAlertMock } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
 
 export default function MissedAlertScreen() {
+  const [statusText, setStatusText] = useState<string | null>(null);
+
   return (
     <AppScreen>
       <PageHeader title="Cảnh báo quên thuốc" subtitle="Bạn chưa xác nhận uống thuốc sau thời gian nhắc." />
@@ -12,27 +17,26 @@ export default function MissedAlertScreen() {
         <Text style={styles.alertTitle}>Bạn chưa xác nhận uống thuốc</Text>
         <View style={styles.row}>
           <Text style={styles.label}>Tên thuốc:</Text>
-          <Text style={styles.value}>Thuốc huyết áp</Text>
+          <Text style={styles.value}>{missedAlertMock.medicineName}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Giờ cần uống:</Text>
-          <Text style={styles.value}>06:00 PM</Text>
+          <Text style={styles.value}>{missedAlertMock.dueTime}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Trễ:</Text>
-          <Text style={[styles.value, styles.lateValue]}>25 phút</Text>
+          <Text style={[styles.value, styles.lateValue]}>{missedAlertMock.lateDuration}</Text>
         </View>
       </SectionCard>
 
-      <ActionButton label="Đã uống" tone="success" />
-      <ActionButton label="Nhắc lại" tone="warning" />
-      <ActionButton label="Bỏ qua" tone="danger" />
+      <ActionButton label="Đã uống" tone="success" onPress={() => setStatusText('Đã xác nhận uống thuốc cho lịch này.')} />
+      <ActionButton label="Nhắc lại" tone="warning" onPress={() => setStatusText('Đã đặt nhắc lại sau 15 phút.')} />
+      <ActionButton label="Bỏ qua" tone="danger" onPress={() => setStatusText('Đã ghi nhận bỏ qua liều thuốc.')} />
 
       <Pressable style={styles.noticeCard}>
-        <Text style={styles.noticeText}>
-          Cảnh báo sẽ được gửi cho người thân sau 15 phút nếu bạn chưa xác nhận.
-        </Text>
+        <Text style={styles.noticeText}>{missedAlertMock.caregiverNotice}</Text>
       </Pressable>
+      <FeedbackToast message={statusText} onHide={() => setStatusText(null)} />
     </AppScreen>
   );
 }

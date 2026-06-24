@@ -3,14 +3,12 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton, AppScreen, ChoiceChip, PageHeader, SectionCard, TextField } from '@/components/meds/ui-kit';
-import { caregiverMock } from '@/constants/app-mock';
+import { caregiverInviteMock, caregiverMock, caregiverPermissionOptions } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
-
-const permissionOptions = ['Xem lịch uống cơ bản', 'Nhận cảnh báo khi quên thuốc', 'Xem báo cáo tuân thủ'];
 
 export default function CaregiverManagementScreen() {
   const [showInvite, setShowInvite] = useState(false);
-  const [permissions, setPermissions] = useState<string[]>([permissionOptions[0], permissionOptions[1]]);
+  const [permissions, setPermissions] = useState<string[]>([caregiverPermissionOptions[0], caregiverPermissionOptions[1]]);
 
   const togglePermission = (value: string) => {
     setPermissions((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
@@ -50,16 +48,16 @@ export default function CaregiverManagementScreen() {
             <Text style={styles.modalTitle}>Mời người thân</Text>
             <TextField label="Email hoặc số điện thoại" placeholder="example@mail.com hoặc 09xxxxxxxx" />
             <SectionCard style={styles.codeCard}>
-              <Text style={styles.inviteCode}>Mã mời: MEDS-2026-8821</Text>
+              <Text style={styles.inviteCode}>Mã mời: {caregiverInviteMock.inviteCode}</Text>
               <View style={styles.qrPlaceholder}>
                 <Ionicons name="qr-code" size={44} color={MedsTheme.colors.primaryDark} />
-                <Text style={styles.qrText}>QR liên kết demo</Text>
+                <Text style={styles.qrText}>{caregiverInviteMock.qrLabel}</Text>
               </View>
             </SectionCard>
 
             <Text style={styles.permissionTitle}>Quyền truy cập</Text>
             <View style={styles.permissionWrap}>
-              {permissionOptions.map((item) => (
+              {caregiverPermissionOptions.map((item) => (
                 <ChoiceChip
                   key={item}
                   label={item}

@@ -3,9 +3,8 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton, AppScreen, ChoiceChip, PageHeader, SectionCard } from '@/components/meds/ui-kit';
+import { aiQuickSymptoms, aiResultMock } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
-
-const quickSymptoms = ['Đau đầu', 'Sốt', 'Ho', 'Đau bụng', 'Chóng mặt', 'Khó thở'];
 
 export default function AiAssistantScreen() {
   const [symptoms, setSymptoms] = useState('');
@@ -40,7 +39,7 @@ export default function AiAssistantScreen() {
 
         <Text style={styles.label}>Triệu chứng nhanh</Text>
         <View style={styles.chips}>
-          {quickSymptoms.map((item) => (
+          {aiQuickSymptoms.map((item) => (
             <ChoiceChip
               key={item}
               label={item}
@@ -60,11 +59,11 @@ export default function AiAssistantScreen() {
       {showResult ? (
         <SectionCard>
           <Text style={styles.resultTitle}>Kết quả AI (tham khảo)</Text>
-          <ResultRow label="Tóm tắt triệu chứng" value="Mệt nhẹ, ho và khó chịu đường hô hấp trên." />
-          <ResultRow label="Khả năng nguyên nhân tham khảo" value="Cảm lạnh/viêm họng do thay đổi thời tiết." />
-          <ResultRow label="Gợi ý chăm sóc ban đầu" value="Nghỉ ngơi, uống nước ấm, theo dõi nhiệt độ." />
-          <ResultRow label="Khi nào nên đi khám" value="Kéo dài trên 3 ngày hoặc sốt cao liên tục." />
-          <ResultRow label="Cảnh báo nguy hiểm" value="Khó thở, đau ngực, ngất, lơ mơ." />
+          <ResultRow label="Tóm tắt triệu chứng" value={aiResultMock.summary} />
+          <ResultRow label="Khả năng nguyên nhân tham khảo" value={aiResultMock.possibleCause} />
+          <ResultRow label="Gợi ý chăm sóc ban đầu" value={aiResultMock.initialCare} />
+          <ResultRow label="Khi nào nên đi khám" value={aiResultMock.medicalVisitWhen} />
+          <ResultRow label="Cảnh báo nguy hiểm" value={aiResultMock.dangerWarning} />
         </SectionCard>
       ) : null}
 

@@ -1,18 +1,40 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { ActionButton, AppScreen, PageHeader, SectionCard, TextField } from '@/components/meds/ui-kit';
+import { adminSummaryMock, adminUsersMock } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
-
-const users = [
-  { id: 'u1', name: 'MedsReminder User', contact: 'meds.user@example.com', role: 'User', status: 'Active', createdAt: '2026-05-20' },
-  { id: 'u2', name: 'Nguyễn Văn A', contact: '0901234567', role: 'Caregiver', status: 'Active', createdAt: '2026-05-18' },
-  { id: 'u3', name: 'Trần B', contact: 'tranb@example.com', role: 'User', status: 'Need support', createdAt: '2026-05-11' },
-];
 
 export default function AdminScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+  const [users, setUsers] = useState(adminUsersMock);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const handleAdminLogin = () => {
+    if (!email.trim() || !password.trim()) {
+      setActionMessage('Vui lòng nhập đầy đủ email và mật khẩu admin.');
+      return;
+    }
+    setAdminLoggedIn(true);
+    setActionMessage('Đăng nhập admin thành công (mock).');
+  };
+
+  const toggleUserLock = (id: string) => {
+    setUsers((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: item.status === 'Active' ? 'Locked' : 'Active',
+            }
+          : item,
+      ),
+    );
+    setActionMessage('Đã cập nhật trạng thái tài khoản.');
+  };
 
   return (
     <AppScreen>
@@ -21,15 +43,16 @@ export default function AdminScreen() {
       <SectionCard>
         <TextField label="Admin email" value={email} onChangeText={setEmail} placeholder="admin@medsreminder.app" />
         <TextField label="Mật khẩu" value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
-        <ActionButton label="Đăng nhập admin" />
+        <ActionButton label="Đăng nhập admin" onPress={handleAdminLogin} />
+        {adminLoggedIn ? <Text style={styles.loggedBadge}>Trạng thái: Đang đăng nhập</Text> : null}
       </SectionCard>
 
       <SectionCard>
         <View style={styles.statsRow}>
-          <SummaryCard label="Tổng user" value="1,240" />
-          <SummaryCard label="Lịch hoạt động" value="3,981" />
-          <SummaryCard label="Cảnh báo hôm nay" value="73" />
-          <SummaryCard label="Tài khoản cần hỗ trợ" value="9" />
+          <SummaryCard label="Tổng user" value={adminSummaryMock.totalUsers} />
+          <SummaryCard label="Lịch hoạt động" value={adminSummaryMock.activeSchedules} />
+          <SummaryCard label="Cảnh báo hôm nay" value={adminSummaryMock.todayAlerts} />
+          <SummaryCard label="Tài khoản cần hỗ trợ" value={adminSummaryMock.supportNeededAccounts} />
         </View>
       </SectionCard>
 
@@ -54,10 +77,12 @@ export default function AdminScreen() {
                 <Cell text={item.status} width={110} />
                 <Cell text={item.createdAt} width={100} />
                 <View style={[styles.cell, { width: 130 }]}>
-                  <Pressable style={styles.smallBtn}>
+                  <Pressable
+                    style={styles.smallBtn}
+                    onPress={() => setActionMessage(`Chi tiết user: ${item.name} (${item.role})`)}>
                     <Text style={styles.smallBtnText}>Chi tiết</Text>
                   </Pressable>
-                  <Pressable style={[styles.smallBtn, styles.smallBtnDanger]}>
+                  <Pressable style={[styles.smallBtn, styles.smallBtnDanger]} onPress={() => toggleUserLock(item.id)}>
                     <Text style={[styles.smallBtnText, styles.smallBtnDangerText]}>Khóa/Mở</Text>
                   </Pressable>
                 </View>
@@ -66,6 +91,11 @@ export default function AdminScreen() {
           </View>
         </ScrollView>
       </SectionCard>
+      <FeedbackToast
+        message={actionMessage}
+        tone={actionMessage?.includes('Vui lòng') ? 'warning' : 'info'}
+        onHide={() => setActionMessage(null)}
+      />
     </AppScreen>
   );
 }
@@ -177,5 +207,10 @@ const styles = StyleSheet.create({
   },
   smallBtnDangerText: {
     color: '#B63B49',
+  },
+  loggedBadge: {
+    textAlign: 'center',
+    color: '#126E48',
+    fontWeight: '700',
   },
 });

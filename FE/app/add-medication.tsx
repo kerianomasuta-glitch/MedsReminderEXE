@@ -4,24 +4,12 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { addMedicationNoteOptions, addMedicationTypeOptions } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
 
-const medicationTypes = [
-  { id: 'capsule', label: 'Viên nang', icon: 'medical' },
-  { id: 'tablet', label: 'Viên nén', icon: 'square' },
-  { id: 'syrup', label: 'Syrups', icon: 'water' },
-  { id: 'other', label: 'Khác', icon: 'ellipsis-horizontal' },
-] as const;
-
-const notes = [
-  { id: 'before', label: 'Trước bữa ăn' },
-  { id: 'after', label: 'Sau bữa ăn' },
-  { id: 'during', label: 'Trong khi ăn' },
-] as const;
-
 export default function AddMedicationScreen() {
-  const [selectedType, setSelectedType] = useState<(typeof medicationTypes)[number]['id']>('capsule');
-  const [selectedNote, setSelectedNote] = useState<(typeof notes)[number]['id']>('after');
+  const [selectedType, setSelectedType] = useState<(typeof addMedicationTypeOptions)[number]['id']>('capsule');
+  const [selectedNote, setSelectedNote] = useState<(typeof addMedicationNoteOptions)[number]['id']>('after');
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -40,7 +28,7 @@ export default function AddMedicationScreen() {
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Loại thuốc</Text>
           <View style={styles.typeGrid}>
-            {medicationTypes.map((type) => {
+            {addMedicationTypeOptions.map((type) => {
               const isActive = type.id === selectedType;
               return (
                 <Pressable
@@ -88,7 +76,7 @@ export default function AddMedicationScreen() {
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Lưu ý khi uống</Text>
           <View style={styles.chipRow}>
-            {notes.map((note) => {
+            {addMedicationNoteOptions.map((note) => {
               const active = note.id === selectedNote;
               return (
                 <Pressable
