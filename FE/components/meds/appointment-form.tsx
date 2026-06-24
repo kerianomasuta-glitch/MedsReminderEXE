@@ -2,17 +2,30 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 
 import { appointmentMock } from '@/constants/app-mock';
+import { getAppointmentById } from '@/store/appointments-store';
 
 import { ActionButton, SectionCard, TextField } from './ui-kit';
 
+export type AppointmentFormSubmitPayload = {
+  title: string;
+  hospital: string;
+  doctor: string;
+  date: string;
+  time: string;
+  address: string;
+  note: string;
+};
+
 type AppointmentFormProps = {
   mode: 'create' | 'edit';
-  onSubmit?: () => void;
+  appointmentId?: string;
+  onSubmit?: (payload: AppointmentFormSubmitPayload) => void | Promise<void>;
   onCancel?: () => void;
 };
 
-export function AppointmentForm({ mode, onSubmit, onCancel }: AppointmentFormProps) {
-  const sample = appointmentMock[0];
+export function AppointmentForm({ mode, appointmentId, onSubmit, onCancel }: AppointmentFormProps) {
+  const sample = (mode === 'edit' ? getAppointmentById(appointmentId) : undefined) ?? appointmentMock[0];
+  const [title, setTitle] = useState(mode === 'edit' ? sample.title : '');
   const [hospital, setHospital] = useState(mode === 'edit' ? sample.hospital : '');
   const [department, setDepartment] = useState('Nội tim mạch');
   const [doctor, setDoctor] = useState(mode === 'edit' ? sample.doctor : '');
@@ -22,19 +35,42 @@ export function AppointmentForm({ mode, onSubmit, onCancel }: AppointmentFormPro
   const [note, setNote] = useState(mode === 'edit' ? sample.note : '');
   const [remindBefore, setRemindBefore] = useState('1 ngày');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const titleError = submitted && !title.trim() ? 'Vui lòng nhập tiêu đề lịch khám.' : undefined;
   const hospitalError = submitted && !hospital.trim() ? 'Vui lòng nhập bệnh viện/phòng khám.' : undefined;
   const dateError = submitted && !date.trim() ? 'Vui lòng nhập ngày khám.' : undefined;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
     setSubmitted(true);
-    if (hospitalError || dateError) return;
-    onSubmit?.();
+    if (titleError || hospitalError || dateError) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit?.({
+        title: title.trim(),
+        hospital: hospital.trim(),
+        doctor: doctor.trim(),
+        date: date.trim(),
+        time: time.trim(),
+        address: address.trim(),
+        note: note.trim(),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <>
       <SectionCard>
+        <TextField
+          label="Tiêu đề lịch khám"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Tái khám huyết áp"
+          error={titleError}
+        />
         <TextField
           label="Tên bệnh viện / phòng khám"
           value={hospital}
@@ -59,7 +95,7 @@ export function AppointmentForm({ mode, onSubmit, onCancel }: AppointmentFormPro
       </SectionCard>
 
       <ActionButton
-        label={mode === 'create' ? 'Lưu lịch khám' : 'Lưu thay đổi'}
+        label={isSubmitting ? 'Đang lưu...' : mode === 'create' ? 'Lưu lịch khám' : 'Lưu thay đổi'}
         icon={<Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />}
         onPress={handleSubmit}
       />

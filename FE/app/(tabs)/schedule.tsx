@@ -3,10 +3,12 @@ import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { todayMedications } from '@/constants/meds-data';
 import { MedsTheme } from '@/constants/meds-theme';
+import { useMedicationSchedules } from '@/store/medication-schedule-store';
 
 export default function ScheduleScreen() {
+  const schedules = useMedicationSchedules();
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -14,7 +16,7 @@ export default function ScheduleScreen() {
         <Text style={styles.subtitle}>Theo dõi lịch uống theo khung giờ trong ngày.</Text>
 
         <View style={styles.timeline}>
-          {todayMedications.map((item) => (
+          {schedules.map((item) => (
             <Pressable
               key={item.id}
               style={styles.timelineRow}

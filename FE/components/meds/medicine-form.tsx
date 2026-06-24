@@ -9,10 +9,19 @@ import { ActionButton, ChoiceChip, FieldLabel, SectionCard, TextField } from './
 
 type MedicineFormMode = 'create' | 'edit';
 
+export type MedicineFormSubmitPayload = {
+  name: string;
+  dose: string;
+  times: string;
+  formType: string;
+  usage: string;
+  instructions: string;
+};
+
 type MedicineFormProps = {
   mode: MedicineFormMode;
   medicineId?: string;
-  onSubmit?: () => void;
+  onSubmit?: (payload: MedicineFormSubmitPayload) => void | Promise<void>;
   onCancel?: () => void;
   onPause?: () => void;
   onDelete?: () => void;
@@ -45,6 +54,7 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
   const [usage, setUsage] = useState<(typeof usageNoteOptions)[number]>(mode === 'edit' ? initialUsageNote : 'Sau ăn');
   const [openEnd, setOpenEnd] = useState(mode === 'create');
   const [errors, setErrors] = useState<{ name?: string; dose?: string; times?: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = () => {
     const next: { name?: string; dose?: string; times?: string } = {};
@@ -55,11 +65,26 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) {
+      return;
+    }
     if (!validate()) {
       return;
     }
-    onSubmit?.();
+    setIsSubmitting(true);
+    try {
+      await onSubmit?.({
+        name: name.trim(),
+        dose: dose.trim(),
+        times: times.trim(),
+        formType,
+        usage,
+        instructions: instructions.trim(),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -198,7 +223,7 @@ export function MedicineForm({ mode, medicineId, onSubmit, onCancel, onPause, on
       </SectionCard>
 
       <ActionButton
-        label={mode === 'create' ? 'Lưu lịch uống thuốc' : 'Lưu thay đổi'}
+        label={isSubmitting ? 'Đang lưu...' : mode === 'create' ? 'Lưu lịch uống thuốc' : 'Lưu thay đổi'}
         icon={<Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />}
         onPress={handleSubmit}
       />

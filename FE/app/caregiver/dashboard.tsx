@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton, AppScreen, PageHeader, SectionCard } from '@/components/meds/ui-kit';
@@ -47,8 +48,8 @@ export default function CaregiverDashboardScreen() {
       </SectionCard>
 
       <View style={styles.actionRow}>
-        <ActionButton label="Gọi nhắc nhở" tone="warning" />
-        <ActionButton label="Gửi lời nhắn" tone="secondary" />
+        <ActionButton label="Gọi nhắc nhở" tone="warning" onPress={() => router.push('/reminder')} />
+        <ActionButton label="Gửi lời nhắn" tone="secondary" onPress={() => router.push('/ai-assistant')} />
       </View>
 
       <SectionCard>
@@ -58,7 +59,7 @@ export default function CaregiverDashboardScreen() {
 
       <SectionCard>
         <Text style={styles.sectionTitle}>Cảnh báo gần đây</Text>
-        <Pressable style={styles.timelineRow}>
+        <Pressable style={styles.timelineRow} onPress={() => router.push('/missed-alert')}>
           <Text style={styles.timelineTime}>18:25</Text>
           <Text style={styles.timelineText}>Thuốc huyết áp - chưa xác nhận</Text>
         </Pressable>

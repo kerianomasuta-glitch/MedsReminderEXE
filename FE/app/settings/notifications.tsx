@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { ActionButton, AppScreen, ChoiceChip, PageHeader, SectionCard } from '@/components/meds/ui-kit';
-import { reminderIntervals } from '@/constants/app-mock';
+import { notificationCaregiverAlertOptions, reminderIntervals } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
 
 export default function NotificationSettingsScreen() {
@@ -13,6 +14,7 @@ export default function NotificationSettingsScreen() {
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [remindInterval, setRemindInterval] = useState('15p');
   const [caregiverAlert, setCaregiverAlert] = useState('30p');
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   return (
     <AppScreen>
@@ -36,7 +38,7 @@ export default function NotificationSettingsScreen() {
       <SectionCard>
         <Text style={styles.title}>Gửi cảnh báo cho người thân sau</Text>
         <View style={styles.row}>
-          {['15p', '30p', '60p'].map((item) => (
+          {notificationCaregiverAlertOptions.map((item) => (
             <ChoiceChip key={item} label={item} active={caregiverAlert === item} onPress={() => setCaregiverAlert(item)} />
           ))}
         </View>
@@ -56,7 +58,8 @@ export default function NotificationSettingsScreen() {
         <SettingSwitch label="Upload/record voice" value={voiceEnabled} onToggle={() => setVoiceEnabled((prev) => !prev)} />
       </SectionCard>
 
-      <ActionButton label="Lưu cài đặt" />
+      <ActionButton label="Lưu cài đặt" onPress={() => setSavedMessage('Đã lưu cài đặt thông báo thành công.')} />
+      <FeedbackToast message={savedMessage} onHide={() => setSavedMessage(null)} />
     </AppScreen>
   );
 }

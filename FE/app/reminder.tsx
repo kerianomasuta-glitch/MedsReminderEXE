@@ -3,12 +3,12 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen, SectionCard } from '@/components/meds/ui-kit';
+import { reminderSkipReasons } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
-
-const skipReasons = ['Quên mang thuốc', 'Không muốn uống', 'Đã uống nhưng quên bấm', 'Khác'];
 
 export default function ReminderScreen() {
   const [showToast, setShowToast] = useState(false);
+  const [toastText, setToastText] = useState('Đã đặt nhắc lại sau 15 phút');
   const [showSkipModal, setShowSkipModal] = useState(false);
 
   useEffect(() => {
@@ -31,10 +31,20 @@ export default function ReminderScreen() {
         <Text style={styles.meta}>Liều lượng: 1 viên</Text>
         <Text style={styles.meta}>Ghi chú: Sau khi ăn, uống với nhiều nước</Text>
 
-        <Pressable style={[styles.largeBtn, styles.successBtn]}>
+        <Pressable
+          style={[styles.largeBtn, styles.successBtn]}
+          onPress={() => {
+            setToastText('Đã xác nhận uống thuốc');
+            setShowToast(true);
+          }}>
           <Text style={styles.successText}>Đã uống</Text>
         </Pressable>
-        <Pressable style={[styles.largeBtn, styles.warningBtn]} onPress={() => setShowToast(true)}>
+        <Pressable
+          style={[styles.largeBtn, styles.warningBtn]}
+          onPress={() => {
+            setToastText('Đã đặt nhắc lại sau 15 phút');
+            setShowToast(true);
+          }}>
           <Text style={styles.warningText}>Nhắc lại sau 15 phút</Text>
         </Pressable>
         <Pressable style={[styles.largeBtn, styles.skipBtn]} onPress={() => setShowSkipModal(true)}>
@@ -44,7 +54,7 @@ export default function ReminderScreen() {
 
       {showToast ? (
         <View style={styles.toast}>
-          <Text style={styles.toastText}>Đã đặt nhắc lại sau 15 phút</Text>
+          <Text style={styles.toastText}>{toastText}</Text>
         </View>
       ) : null}
 
@@ -52,8 +62,15 @@ export default function ReminderScreen() {
         <View style={styles.overlay}>
           <SectionCard style={styles.reasonCard}>
             <Text style={styles.reasonTitle}>Lý do bỏ qua (tuỳ chọn)</Text>
-            {skipReasons.map((reason) => (
-              <Pressable key={reason} style={styles.reasonRow} onPress={() => setShowSkipModal(false)}>
+            {reminderSkipReasons.map((reason) => (
+              <Pressable
+                key={reason}
+                style={styles.reasonRow}
+                onPress={() => {
+                  setShowSkipModal(false);
+                  setToastText(`Đã ghi nhận: ${reason}`);
+                  setShowToast(true);
+                }}>
                 <Text style={styles.reasonText}>{reason}</Text>
               </Pressable>
             ))}

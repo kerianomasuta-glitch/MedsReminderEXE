@@ -6,12 +6,9 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-import {
-  MedicationStatus,
-  todayMedications,
-  upcomingMedication,
-} from "@/constants/meds-data";
+import { MedicationStatus } from "@/constants/meds-data";
 import { MedsTheme } from "@/constants/meds-theme";
+import { updateMedicationScheduleStatus, useMedicationSchedules } from "@/store/medication-schedule-store";
 
 const statusLabel: Record<MedicationStatus, string> = {
   taken: "Đã uống",
@@ -22,6 +19,8 @@ const statusLabel: Record<MedicationStatus, string> = {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const schedules = useMedicationSchedules();
+  const upcoming = schedules.find((item) => item.status === "upcoming") ?? schedules[0];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -73,11 +72,11 @@ export default function HomeScreen() {
             <View style={styles.upcomingHeader}>
               <View>
                 <Text style={styles.upcomingTime}>
-                  {upcomingMedication.time}
+                  {upcoming?.time ?? "--:--"}
                 </Text>
                 <View style={styles.upcomingBadge}>
                   <Text style={styles.upcomingBadgeText}>
-                    {upcomingMedication.reminderIn}
+                    {upcoming ? "Trong 30 phút" : "Chưa có lịch"}
                   </Text>
                 </View>
               </View>
@@ -90,10 +89,16 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <Text style={styles.upcomingName}>{upcomingMedication.name}</Text>
-            <Text style={styles.upcomingDose}>{upcomingMedication.dose}</Text>
+            <Text style={styles.upcomingName}>{upcoming?.name ?? "Chưa có thuốc"}</Text>
+            <Text style={styles.upcomingDose}>{upcoming?.dose ?? "Hãy thêm lịch uống thuốc mới"}</Text>
 
-            <Pressable style={styles.doneButton}>
+            <Pressable
+              style={styles.doneButton}
+              onPress={() => {
+                if (upcoming) {
+                  updateMedicationScheduleStatus(upcoming.id, "taken");
+                }
+              }}>
               <Text style={styles.doneButtonText}>Đã uống</Text>
             </Pressable>
           </View>
@@ -105,7 +110,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {todayMedications.map((item) => (
+          {schedules.map((item) => (
             <Pressable
               key={item.id}
               onPress={() =>
