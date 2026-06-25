@@ -5,6 +5,9 @@ class UserRepository {
 
   findUserByPhone = async (phone) => User.findOne({ phone });
 
+  findUserByPhoneWithRole = async (phone) =>
+    User.findOne({ phone: phone.trim() }).populate('roleId');
+
   findUserByEmailWithPassword = async (email) =>
     User.findOne({ email }).select('+password').populate('roleId');
 

@@ -2,6 +2,7 @@ import express from 'express';
 import {
   registerCaregiverSchema,
   loginCaregiverSchema,
+  loginPatientSchema,
   refreshTokenSchema,
   logoutSchema,
 } from '../../validators/auth.validator.js';
@@ -147,6 +148,62 @@ router.post(
   async (req, res, next) => {
     const authController = req.container.resolve('authController');
     await authController.loginUser(req, res, next);
+  },
+);
+
+/**
+ * @openapi
+ * /api/v1/auth/login/patient:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Đăng nhập bệnh nhân (PIN)
+ *     description: |
+ *       Bệnh nhân đăng nhập bằng **số điện thoại của người thân (caregiver)** và **mã PIN 4 số**
+ *       do caregiver đặt khi tạo hồ sơ. Hệ thống so khớp PIN với từng bệnh nhân đã liên kết
+ *       với caregiver đó và trả JWT cho đúng bệnh nhân.
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [caregiverPhone, authPin]
+ *             properties:
+ *               caregiverPhone:
+ *                 type: string
+ *                 description: SĐT đăng ký của người thân (caregiver)
+ *                 example: "0901234567"
+ *               authPin:
+ *                 type: string
+ *                 description: Mã PIN 4 chữ số
+ *                 example: "1234"
+ *     responses:
+ *       200:
+ *         description: Đăng nhập thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Đăng nhập thành công
+ *                 data:
+ *                   $ref: '#/components/schemas/AuthTokensResponse'
+ *       401:
+ *         description: SĐT người thân hoặc mã PIN không đúng
+ */
+router.post(
+  '/login/patient',
+  getUserDeviceName,
+  validateData(loginPatientSchema),
+  async (req, res, next) => {
+    const authController = req.container.resolve('authController');
+    await authController.loginPatient(req, res, next);
   },
 );
 

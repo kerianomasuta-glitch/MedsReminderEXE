@@ -9,10 +9,11 @@ const SALT_ROUNDS = 10;
 const ALLOWED_LOGIN_ROLES = ['caregiver', 'admin'];
 
 class AuthService {
-  constructor({ userRepository, roleRepository, tokenService }) {
+  constructor({ userRepository, roleRepository, tokenService, caregiverPatientService }) {
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.tokenService = tokenService;
+    this.caregiverPatientService = caregiverPatientService;
   }
 
   #sanitizeUser(user) {
@@ -124,6 +125,19 @@ class AuthService {
 
     const tokens = await this.#issueTokens(user, deviceName, finalDeviceId);
     return tokens;
+  }
+
+  async loginPatient({ caregiverPhone, authPin, deviceName = 'unknown' }) {
+    const patient = await this.caregiverPatientService.authenticatePatient({
+      caregiverPhone,
+      authPin,
+    });
+
+    const tokens = await this.#issueTokens(patient, deviceName);
+    return {
+      user: this.#sanitizeUser(patient),
+      ...tokens,
+    };
   }
 
   async logoutUser({ userId, deviceId }) {

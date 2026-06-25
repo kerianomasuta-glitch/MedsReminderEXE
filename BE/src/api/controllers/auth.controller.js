@@ -38,6 +38,24 @@ class AuthController {
     }
   };
 
+  loginPatient = async (req, res, next) => {
+    try {
+      const { caregiverPhone, authPin } = req.body;
+      const result = await this.authService.loginPatient({
+        caregiverPhone,
+        authPin,
+        deviceName: req.device,
+      });
+      res.json({
+        status: 'success',
+        message: 'Đăng nhập thành công',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   refreshUserToken = async (req, res, next) => {
     try {
       const { refreshToken, deviceId } = req.body;
