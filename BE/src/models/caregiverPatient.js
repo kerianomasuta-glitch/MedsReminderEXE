@@ -14,21 +14,33 @@ const caregiverPatientSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
     status: {
       type: String,
       enum: ['pending', 'linked', 'rejected', 'removed'],
-      default: 'pending',
+      default: 'linked',
     },
-    permissions: {
-      type: [String],
-      enum: ['view_schedule', 'missed_alert', 'view_report'],
-      default: ['view_schedule', 'missed_alert'],
+    linkedAt: {
+      type: Date,
+      default: Date.now,
     },
     inviteCode: String,
+    qrToken: {
+      type: String,
+      select: false,
+    },
+    qrExpiresAt: Date,
   },
   { timestamps: true }
 );
 
 caregiverPatientSchema.index({ caregiverId: 1, patientId: 1 }, { unique: true });
+caregiverPatientSchema.index({ caregiverId: 1, status: 1 });
+caregiverPatientSchema.index({ inviteCode: 1 }, { sparse: true, unique: true });
+caregiverPatientSchema.index({ qrToken: 1 }, { sparse: true, unique: true });
 
 export default mongoose.model('CaregiverPatientMapping', caregiverPatientSchema);
