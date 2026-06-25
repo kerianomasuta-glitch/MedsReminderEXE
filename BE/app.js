@@ -10,6 +10,8 @@ import roleRouter from './src/api/routers/role.route.js';
 import caregiverPatientRouter from './src/api/routers/caregiverPatient.route.js';
 import medicationRouter from './src/api/routers/medication.route.js';
 import prescriptionRouter from './src/api/routers/prescription.route.js';
+import scheduleRouter from './src/api/routers/schedule.route.js';
+import medicationLogRouter from './src/api/routers/medicationLog.route.js';
 
 configDotenv();
 
@@ -60,6 +62,8 @@ app.use(`/${url}/roles`, roleRouter);
 app.use(`/${url}/patients`, caregiverPatientRouter);
 app.use(`/${url}/medications`, medicationRouter);
 app.use(`/${url}/prescriptions`, prescriptionRouter);
+app.use(`/${url}/schedules`, scheduleRouter);
+app.use(`/${url}/medication-logs`, medicationLogRouter);
 
 app.use(handleError);
 
