@@ -54,6 +54,23 @@ const swaggerOptions = {
                         updatedAt: { type: 'string', format: 'date-time' },
                     },
                 },
+                AuthTokens: {
+                    type: 'object',
+                    properties: {
+                        accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                        refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                        deviceId: { type: 'string', example: 'DEVICE_A1B2C3D4' },
+                    },
+                },
+                AuthTokensResponse: {
+                    type: 'object',
+                    properties: {
+                        user: { $ref: '#/components/schemas/User' },
+                        accessToken: { type: 'string' },
+                        refreshToken: { type: 'string' },
+                        deviceId: { type: 'string', example: 'DEVICE_A1B2C3D4' },
+                    },
+                },
             },
         },
         security: [

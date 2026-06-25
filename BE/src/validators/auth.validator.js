@@ -83,7 +83,7 @@ export const registerUserSchema = Joi.object({
   gender: gender.optional(),
 });
 
-/** Caregiver đăng nhập (email hoặc SĐT + mật khẩu) */
+/** Caregiver + Admin đăng nhập (email hoặc SĐT + mật khẩu) */
 export const loginCaregiverSchema = Joi.object({
   email: Joi.string().email().lowercase().trim().messages({
     'string.email': 'Email không hợp lệ',
@@ -96,6 +96,23 @@ export const loginCaregiverSchema = Joi.object({
     'object.xor': 'Chỉ nhập email hoặc số điện thoại, không nhập cả hai',
     'object.missing': 'Cần email hoặc số điện thoại',
   });
+
+/** Làm mới access token */
+export const refreshTokenSchema = Joi.object({
+  refreshToken: Joi.string().trim().required().messages({
+    'any.required': 'Refresh token là bắt buộc',
+  }),
+  deviceId: Joi.string().trim().required().messages({
+    'any.required': 'deviceId là bắt buộc',
+  }),
+});
+
+/** Đăng xuất thiết bị hiện tại */
+export const logoutSchema = Joi.object({
+  deviceId: Joi.string().trim().required().messages({
+    'any.required': 'deviceId là bắt buộc',
+  }),
+});
 
 /** Bệnh nhân đăng nhập: SĐT người thân + PIN */
 export const loginPatientSchema = Joi.object({

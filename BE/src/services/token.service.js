@@ -15,59 +15,42 @@ const parseTtlSeconds = (value, fallback) => {
 class TokenService {
   constructor({ redisClient }) {
     this.redis = redisClient;
-
     this.accessSecret = process.env.JWT_SECRET;
     this.refreshSecret = process.env.REFRESH_JWT_SECRET;
-
-    // Defaults: access 15m, refresh 7d
     this.accessTtl = parseTtlSeconds(process.env.JWT_ACCESS_EXPIRES, 15 * 60);
     this.refreshTtl = parseTtlSeconds(process.env.JWT_REFRESH_EXPIRES, 7 * 86400);
   }
 
-  #refreshKey(userId, jti) {
-    return `refresh:${userId}:${jti}`;
+  #refreshKey(userId, deviceId) {
+    return `refresh:${userId}:${deviceId}`;
   }
 
-  #buildPayload(payload) {
-    const userId = payload.sub || payload.id || payload._id;
-    if (!userId) {
-      throw new AuthenticationError('Token payload must contain a user id');
-    }
-    return {
-      sub: String(userId),
-      roleName: payload.roleName || payload.role,
-    };
-  }
+  async generateAuthTokens({ userId, name, roleId, roleName, deviceId }) {
+    const finalDeviceId = deviceId
+      || `DEVICE_${crypto.randomUUID().split('-')[0].toUpperCase()}`;
 
-  generateAccessToken(payload) {
-    const data = this.#buildPayload(payload);
-    return jwt.sign(data, this.accessSecret, {
-      expiresIn: this.accessTtl,
-    });
-  }
-
-  async generateRefreshToken(payload, { device = 'unknown' } = {}) {
-    const data = this.#buildPayload(payload);
-    const jti = crypto.randomUUID();
-
-    const token = jwt.sign({ ...data, jti }, this.refreshSecret, {
-      expiresIn: this.refreshTtl,
-    });
-
-    await this.redis.set(
-      this.#refreshKey(data.sub, jti),
-      JSON.stringify({ device, createdAt: Date.now() }),
-      'EX',
-      this.refreshTtl
+    const accessToken = jwt.sign(
+      { userId, fullName: name, roleId, roleName, deviceId: finalDeviceId },
+      this.accessSecret,
+      { expiresIn: this.accessTtl },
     );
 
-    return token;
+    const refreshToken = jwt.sign(
+      { userId, deviceId: finalDeviceId, roleName },
+      this.refreshSecret,
+      { expiresIn: this.refreshTtl },
+    );
+
+    return { accessToken, refreshToken, deviceId: finalDeviceId };
   }
 
-  async generateAuthTokens(payload, { device = 'unknown' } = {}) {
-    const accessToken = this.generateAccessToken(payload);
-    const refreshToken = await this.generateRefreshToken(payload, { device });
-    return { accessToken, refreshToken };
+  async storeRefreshToken({ userId, deviceId, refreshToken, deviceName = 'unknown' }) {
+    await this.redis.set(
+      this.#refreshKey(userId, deviceId),
+      JSON.stringify({ refreshToken, deviceName, createdAt: Date.now() }),
+      'EX',
+      this.refreshTtl,
+    );
   }
 
   async verifyAccessToken({ token }) {
@@ -86,29 +69,24 @@ class TokenService {
       throw new AuthenticationError('Refresh token expired or invalid');
     }
 
-    const exists = await this.redis.exists(this.#refreshKey(decoded.sub, decoded.jti));
-    if (!exists) {
+    const stored = await this.redis.get(this.#refreshKey(decoded.userId, decoded.deviceId));
+    if (!stored) {
       throw new AuthenticationError('Refresh token has been revoked');
+    }
+
+    const parsed = JSON.parse(stored);
+    if (parsed.refreshToken !== token) {
+      throw new AuthenticationError('Refresh token expired or invalid');
     }
 
     return decoded;
   }
 
-  // Verify the old refresh token, revoke it, and issue a fresh pair.
-  async rotateRefreshToken({ token, device = 'unknown' } = {}) {
-    const decoded = await this.verifyRefreshToken({ token });
-    await this.revokeRefreshToken({ userId: decoded.sub, jti: decoded.jti });
-    return this.generateAuthTokens(
-      { sub: decoded.sub, roleName: decoded.roleName },
-      { device }
-    );
+  async revokeRefreshToken({ userId, deviceId }) {
+    const deleted = await this.redis.del(this.#refreshKey(userId, deviceId));
+    return deleted > 0;
   }
 
-  async revokeRefreshToken({ userId, jti }) {
-    await this.redis.del(this.#refreshKey(userId, jti));
-  }
-
-  // Revoke every active refresh token for a user (e.g. on logout-all / password change).
   async revokeAllUserTokens({ userId }) {
     const pattern = this.#refreshKey(userId, '*');
     const stream = this.redis.scanStream({ match: pattern, count: 100 });
