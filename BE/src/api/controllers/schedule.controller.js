@@ -3,10 +3,15 @@ class ScheduleController {
     this.scheduleService = scheduleService;
   }
 
+  #actor(req) {
+    return { userId: req.user.userId, roleName: req.user.roleName };
+  }
+
   createSchedule = async (req, res, next) => {
     try {
       const { patientId, prescriptionId, startDate, endDate, frequencyType, timeSlots, daysOfWeek, intervalDays, reminderMinutesBefore, timezone } = req.body;
       const schedule = await this.scheduleService.createSchedule({
+        actor: this.#actor(req),
         patientId,
         prescriptionId,
         createdBy: req.user.userId,
@@ -34,6 +39,7 @@ class ScheduleController {
       const { id } = req.params;
       const { startDate, endDate, frequencyType, timeSlots, daysOfWeek, intervalDays, reminderMinutesBefore, timezone, isActive } = req.body;
       const schedule = await this.scheduleService.updateSchedule({
+        actor: this.#actor(req),
         id,
         data: { startDate, endDate, frequencyType, timeSlots, daysOfWeek, intervalDays, reminderMinutesBefore, timezone, isActive },
       });
@@ -54,6 +60,7 @@ class ScheduleController {
       const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
 
       const { schedules, total } = await this.scheduleService.getSchedulesByPatient({
+        actor: this.#actor(req),
         patientId,
         limit,
         page,
@@ -70,7 +77,10 @@ class ScheduleController {
 
   getScheduleById = async (req, res, next) => {
     try {
-      const schedule = await this.scheduleService.getScheduleById(req.params.id);
+      const schedule = await this.scheduleService.getScheduleById({
+        actor: this.#actor(req),
+        id: req.params.id,
+      });
       res.json({
         status: 'success',
         message: 'Lấy thông tin lịch thành công',
@@ -83,7 +93,10 @@ class ScheduleController {
 
   deleteSchedule = async (req, res, next) => {
     try {
-      await this.scheduleService.deleteSchedule(req.params.id);
+      await this.scheduleService.deleteSchedule({
+        actor: this.#actor(req),
+        id: req.params.id,
+      });
       res.json({
         status: 'success',
         message: 'Xóa lịch uống thuốc thành công',

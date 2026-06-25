@@ -10,6 +10,9 @@ class CaregiverPatientRepository {
   findByCaregiverAndPatient = async ({ caregiverId, patientId }) =>
     CaregiverPatient.findOne({ caregiverId, patientId });
 
+  findLinkedByCaregiverAndPatient = async ({ caregiverId, patientId }) =>
+    CaregiverPatient.findOne({ caregiverId, patientId, status: 'linked' });
+
   findLinkedByCaregiverId = async (caregiverId) =>
     CaregiverPatient.find({ caregiverId, status: 'linked' }).populate('patientId');
 

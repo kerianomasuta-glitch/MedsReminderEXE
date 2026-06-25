@@ -9,10 +9,11 @@ const ALLOWED_TRANSITIONS = {
 };
 
 class MedicationLogService {
-  constructor({ medicationLogRepository, scheduleRepository, userRepository }) {
+  constructor({ medicationLogRepository, scheduleRepository, userRepository, patientAccessService }) {
     this.medicationLogRepository = medicationLogRepository;
     this.scheduleRepository = scheduleRepository;
     this.userRepository = userRepository;
+    this.patientAccessService = patientAccessService;
   }
 
   async #assertPatientExists(patientId) {
@@ -23,12 +24,23 @@ class MedicationLogService {
     return patient;
   }
 
-  async createLog({ patientId, scheduleId, prescriptionId, expectedTime }) {
+  async #assertAccess(actor, patientId) {
+    await this.patientAccessService.assertCanAccessPatient({
+      ...actor,
+      patientId,
+    });
+  }
+
+  async createLog({ actor, patientId, scheduleId, prescriptionId, expectedTime }) {
     await this.#assertPatientExists(patientId);
+    await this.#assertAccess(actor, patientId);
 
     const schedule = await this.scheduleRepository.findById(scheduleId);
     if (!schedule) {
       throw new BadRequestError('Lịch uống thuốc không tồn tại');
+    }
+    if (schedule.patientId.toString() !== patientId.toString()) {
+      throw new BadRequestError('Lịch uống thuốc không thuộc bệnh nhân này');
     }
 
     return this.medicationLogRepository.create({
@@ -39,11 +51,12 @@ class MedicationLogService {
     });
   }
 
-  async updateLogStatus({ id, status, actualTime, skipReason, note }) {
+  async updateLogStatus({ actor, id, status, actualTime, skipReason, note }) {
     const log = await this.medicationLogRepository.findById(id);
     if (!log) {
       throw new NotFoundError('Bản ghi uống thuốc không tồn tại');
     }
+    await this.#assertAccess(actor, log.patientId);
 
     const allowed = ALLOWED_TRANSITIONS[log.status];
     if (!allowed || !allowed.includes(status)) {
@@ -66,20 +79,27 @@ class MedicationLogService {
     return this.medicationLogRepository.updateById(id, updateData);
   }
 
-  async getLogsByPatient({ patientId, limit, page, status }) {
+  async getLogsByPatient({ actor, patientId, limit, page, status }) {
     await this.#assertPatientExists(patientId);
+    await this.#assertAccess(actor, patientId);
     return this.medicationLogRepository.findByPatientId({ patientId, limit, page, status });
   }
 
-  async getLogsBySchedule({ scheduleId, limit, page }) {
+  async getLogsBySchedule({ actor, scheduleId, limit, page }) {
+    const schedule = await this.scheduleRepository.findById(scheduleId);
+    if (!schedule) {
+      throw new NotFoundError('Lịch uống thuốc không tồn tại');
+    }
+    await this.#assertAccess(actor, schedule.patientId);
     return this.medicationLogRepository.findByScheduleId({ scheduleId, limit, page });
   }
 
-  async getLogById(id) {
+  async getLogById({ actor, id }) {
     const log = await this.medicationLogRepository.findById(id);
     if (!log) {
       throw new NotFoundError('Bản ghi uống thuốc không tồn tại');
     }
+    await this.#assertAccess(actor, log.patientId);
     return log;
   }
 }

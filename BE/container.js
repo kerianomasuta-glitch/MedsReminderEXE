@@ -17,6 +17,7 @@ import MedicationService from './src/services/medication.service.js';
 import PrescriptionService from './src/services/prescription.service.js';
 import ScheduleService from './src/services/schedule.service.js';
 import MedicationLogService from './src/services/medicationLog.service.js';
+import PatientAccessService from './src/services/patientAccess.service.js';
 // import repositories
 import userRepository from './src/repositories/user.repository.js';
 import CaregiverPatientRepository from './src/repositories/caregiverPatient.repository.js';
@@ -49,6 +50,7 @@ export function setupContainer() {
     prescriptionService: asClass(PrescriptionService).singleton(),
     scheduleService: asClass(ScheduleService).singleton(),
     medicationLogService: asClass(MedicationLogService).singleton(),
+    patientAccessService: asClass(PatientAccessService).singleton(),
     // repositories
     userRepository: asClass(userRepository).singleton(),
     caregiverPatientRepository: asClass(CaregiverPatientRepository).singleton(),
