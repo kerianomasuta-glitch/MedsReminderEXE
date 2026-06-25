@@ -28,6 +28,33 @@ const swaggerOptions = {
                     description: 'Enter your access token (obtained from /api/v1/auth/login)',
                 },
             },
+            schemas: {
+                User: {
+                    type: 'object',
+                    properties: {
+                        _id: { type: 'string', example: '64f000000000000000000001' },
+                        name: { type: 'string', example: 'Nguyễn Văn A' },
+                        email: { type: 'string', format: 'email', example: 'nguyenvana@example.com' },
+                        phone: { type: 'string', example: '0901234567' },
+                        roleId: { type: 'string', example: '64f000000000000000000010' },
+                        avatar: { type: 'string' },
+                        birthday: { type: 'string', format: 'date-time' },
+                        gender: { type: 'string', enum: ['male', 'female', 'other'] },
+                        isActive: { type: 'boolean', example: true },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                    },
+                },
+                Role: {
+                    type: 'object',
+                    properties: {
+                        _id: { type: 'string', example: '64f000000000000000000010' },
+                        roleName: { type: 'string', enum: ['patient', 'caregiver', 'admin'], example: 'caregiver' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                    },
+                },
+            },
         },
         security: [
             { bearerAuth: [] },

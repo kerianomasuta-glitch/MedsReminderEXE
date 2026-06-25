@@ -15,10 +15,14 @@ const userSchema = new mongoose.Schema(
       sparse: true,
       trim: true,
     },
-    role: {
+    password: {
       type: String,
-      enum: ['patient', 'caregiver', 'admin'],
-      default: 'patient',
+      select: false,
+    },
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: true,
     },
     authPin: {
       type: String,
@@ -27,8 +31,14 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       trim: true,
+      required: true,
     },
     avatar: String,
+    birthday: Date,
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'other'],
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -36,5 +46,7 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.index({ roleId: 1, phone: 1 });
 
 export default mongoose.model('User', userSchema);
