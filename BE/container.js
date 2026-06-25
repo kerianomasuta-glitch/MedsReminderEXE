@@ -4,15 +4,18 @@ import { createContainer, asClass, asValue, Lifetime } from 'awilix';
 import AuthController from './src/api/controllers/auth.controller.js';
 import RoleController from './src/api/controllers/role.controller.js';
 import CaregiverPatientController from './src/api/controllers/caregiverPatient.controller.js';
+import MedicationController from './src/api/controllers/medication.controller.js';
 // import services
 import authService from './src/services/auth.service.js';
 import RoleService from './src/services/role.service.js';
 import TokenService from './src/services/token.service.js';
 import CaregiverPatientService from './src/services/caregiverPatient.service.js';
+import MedicationService from './src/services/medication.service.js';
 // import repositories
 import userRepository from './src/repositories/user.repository.js';
 import CaregiverPatientRepository from './src/repositories/caregiverPatient.repository.js';
 import RoleRepository from './src/repositories/role.repository.js';
+import MedicationRepository from './src/repositories/medication.repository.js';
 // import infrastructure
 import redisClient from './src/config/redis.js';
 
@@ -24,15 +27,18 @@ export function setupContainer() {
     authController: asClass(AuthController).singleton(),
     roleController: asClass(RoleController).singleton(),
     caregiverPatientController: asClass(CaregiverPatientController).singleton(),
+    medicationController: asClass(MedicationController).singleton(),
     // services
     authService: asClass(authService).singleton(),
     roleService: asClass(RoleService).singleton(),
     tokenService: asClass(TokenService).singleton(),
     caregiverPatientService: asClass(CaregiverPatientService).singleton(),
+    medicationService: asClass(MedicationService).singleton(),
     // repositories
     userRepository: asClass(userRepository).singleton(),
     caregiverPatientRepository: asClass(CaregiverPatientRepository).singleton(),
     roleRepository: asClass(RoleRepository).singleton(),
+    medicationRepository: asClass(MedicationRepository).singleton(),
     // infrastructure
     redisClient: asValue(redisClient),
   });
