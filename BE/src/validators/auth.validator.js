@@ -44,6 +44,9 @@ export const registerCaregiverSchema = Joi.object({
   password: password.required(),
 });
 
+/** Admin tạo tài khoản admin mới (endpoint /auth/admin/register, cần đăng nhập admin) */
+export const registerAdminSchema = registerCaregiverSchema;
+
 /** Caregiver + Admin đăng nhập (email hoặc SĐT + mật khẩu) */
 export const loginCaregiverSchema = Joi.object({
   email: Joi.string().email().lowercase().trim().messages({
