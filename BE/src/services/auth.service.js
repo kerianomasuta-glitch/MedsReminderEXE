@@ -9,17 +9,10 @@ const SALT_ROUNDS = 10;
 const ALLOWED_LOGIN_ROLES = ['caregiver', 'admin'];
 
 class AuthService {
-  constructor({
-    userRepository,
-    roleRepository,
-    tokenService,
-    caregiverPatientRepository,
-    caregiverPatientService,
-  }) {
+  constructor({ userRepository, roleRepository, tokenService, caregiverPatientService }) {
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.tokenService = tokenService;
-    this.caregiverPatientRepository = caregiverPatientRepository;
     this.caregiverPatientService = caregiverPatientService;
   }
 
@@ -113,84 +106,15 @@ class AuthService {
   }
 
   async loginPatient({ caregiverPhone, authPin, deviceName = 'unknown' }) {
-    const caregiver = await this.userRepository.findUserByPhoneWithPassword(caregiverPhone.trim());
-    if (!caregiver || !caregiver.isActive) {
-      throw new AuthenticationError('SĐT người thân hoặc mã PIN không đúng');
-    }
-
-    const caregiverRole = this.#getRoleName(caregiver);
-    if (caregiverRole !== 'caregiver' && caregiverRole !== 'admin') {
-      throw new AuthenticationError('SĐT người thân hoặc mã PIN không đúng');
-    }
-
-    const linkedMappings = await this.caregiverPatientRepository
-      .findLinkedByCaregiverIdWithPin(caregiver._id);
-    if (!linkedMappings.length) {
-      throw new AuthenticationError('Người thân chưa liên kết bệnh nhân');
-    }
-
-    let matchedMapping = null;
-    for (const mapping of linkedMappings) {
-      const pinMatchesHash = await bcrypt.compare(authPin, mapping.authPin).catch(() => false);
-      const pinMatchesLegacyRaw = mapping.authPin === authPin;
-      if (pinMatchesHash || pinMatchesLegacyRaw) {
-        matchedMapping = mapping;
-        break;
-      }
-    }
-
-    if (!matchedMapping?.patientId?._id) {
-      throw new AuthenticationError('SĐT người thân hoặc mã PIN không đúng');
-    }
-
-    const patientUser = await this.userRepository.findUserById(matchedMapping.patientId._id);
-    if (!patientUser || !patientUser.isActive) {
-      throw new AuthenticationError('Bệnh nhân không tồn tại hoặc đã bị khóa');
-    }
-
-    const tokens = await this.#issueTokens(patientUser, deviceName);
-    return {
-      user: this.#sanitizeUser(patientUser),
-      ...tokens,
-    };
-  }
-
-  async getMyPatients({ caregiverId }) {
-    const mappings = await this.caregiverPatientRepository.findLinkedByCaregiverId(caregiverId);
-    return mappings
-      .filter((mapping) => mapping.patientId)
-      .map((mapping) => ({
-        mappingId: mapping._id,
-        linkedAt: mapping.linkedAt,
-        patient: this.#sanitizeUser(mapping.patientId),
-      }));
-  }
-
-  async createPatientForCaregiver({ caregiverId, name, authPin, birthday, gender }) {
-    const caregiver = await this.userRepository.findUserById(caregiverId);
-    if (!caregiver || !caregiver.isActive) {
-      throw new AuthenticationError('Người thân không tồn tại hoặc đã bị khóa');
-    }
-
-    const caregiverRole = this.#getRoleName(caregiver);
-    if (caregiverRole !== 'caregiver' && caregiverRole !== 'admin') {
-      throw new ForbiddenError('Chỉ người thân chăm sóc mới có quyền tạo bệnh nhân');
-    }
-
-    const mapping = await this.caregiverPatientService.createPatient({
-      caregiverId,
-      name: name.trim(),
+    const patient = await this.caregiverPatientService.authenticatePatient({
+      caregiverPhone,
       authPin,
-      birthday: birthday ? new Date(birthday) : undefined,
-      gender,
     });
 
+    const tokens = await this.#issueTokens(patient, deviceName);
     return {
-      patient: this.#sanitizeUser(mapping.patientId),
-      loginFields: {
-        caregiverPhone: caregiver.phone,
-        authPin,
-      },
+      user: this.#sanitizeUser(patient),
+      ...tokens,
     };
   }
 

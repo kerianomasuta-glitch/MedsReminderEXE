@@ -18,13 +18,38 @@ const router = express.Router();
 /**
  * @openapi
  * /api/v1/patients:
+ *   get:
+ *     tags: [Patient]
+ *     summary: Danh sách bệnh nhân của caregiver
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách thành công
+ *       401:
+ *         description: Chưa đăng nhập
+ *       403:
+ *         description: Không có quyền
+ */
+router.get(
+  '/',
+  authentication,
+  authorizationByRole(['caregiver', 'admin']),
+  async (req, res, next) => {
+    const controller = req.container.resolve('caregiverPatientController');
+    await controller.getMyPatients(req, res, next);
+  },
+);
+
+/**
+ * @openapi
+ * /api/v1/patients:
  *   post:
  *     tags: [Patient]
  *     summary: Tạo hồ sơ bệnh nhân mới
  *     description: |
  *       Caregiver đã đăng nhập tạo bệnh nhân mới và liên kết với tài khoản của mình.
  *       Hệ thống tự tạo User (role patient) và CaregiverPatientMapping (kèm mã PIN hash).
- *       Mã PIN dùng để bệnh nhân đăng nhập bằng SĐT của caregiver.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -53,30 +78,17 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Tạo bệnh nhân thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 message:
- *                   type: string
- *                   example: Tạo hồ sơ bệnh nhân thành công
- *                 data:
- *                   $ref: '#/components/schemas/CaregiverPatientMapping'
  *       400:
- *         description: Dữ liệu không hợp lệ / PIN trùng / Role patient chưa khởi tạo
+ *         description: Dữ liệu không hợp lệ / PIN trùng
  *       401:
  *         description: Chưa đăng nhập
  *       403:
- *         description: Chỉ caregiver mới được tạo bệnh nhân
+ *         description: Không có quyền
  */
 router.post(
   '/',
   authentication,
-  authorizationByRole(['caregiver']),
+  authorizationByRole(['caregiver', 'admin']),
   validateData(createPatientSchema),
   async (req, res, next) => {
     const controller = req.container.resolve('caregiverPatientController');
