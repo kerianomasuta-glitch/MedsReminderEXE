@@ -7,6 +7,7 @@ import { setupSwagger } from './src/config/swagger.js';
 import { handleError } from './src/api/middleware/middleware.js';
 import authRouter from './src/api/routers/auth.route.js';
 import roleRouter from './src/api/routers/role.route.js';
+import caregiverPatientRouter from './src/api/routers/caregiverPatient.route.js';
 
 configDotenv();
 
@@ -46,6 +47,7 @@ const url = 'api/v1';
 // use routes
 app.use(`/${url}/auth`, authRouter);
 app.use(`/${url}/roles`, roleRouter);
+app.use(`/${url}/patients`, caregiverPatientRouter);
 
 app.use(handleError);
 

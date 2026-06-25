@@ -71,6 +71,20 @@ const swaggerOptions = {
                         deviceId: { type: 'string', example: 'DEVICE_A1B2C3D4' },
                     },
                 },
+                CaregiverPatientMapping: {
+                    type: 'object',
+                    description: 'Liên kết caregiver–patient (authPin không trả về trong response)',
+                    properties: {
+                        _id: { type: 'string', example: '64f000000000000000000020' },
+                        caregiverId: { type: 'string', example: '64f000000000000000000001' },
+                        patientId: { $ref: '#/components/schemas/User' },
+                        createdBy: { type: 'string', example: '64f000000000000000000001' },
+                        status: { type: 'string', enum: ['pending', 'linked', 'rejected', 'removed'], example: 'linked' },
+                        linkedAt: { type: 'string', format: 'date-time' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                    },
+                },
             },
         },
         security: [
