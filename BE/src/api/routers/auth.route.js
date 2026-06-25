@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   registerCaregiverSchema,
+  registerAdminSchema,
   loginCaregiverSchema,
   loginPatientSchema,
   refreshTokenSchema,
@@ -9,6 +10,7 @@ import {
 import {
   validateData,
   authentication,
+  authorizationByRole,
   getUserDeviceName,
 } from '../middleware/middleware.js';
 
@@ -297,6 +299,75 @@ router.post(
   async (req, res, next) => {
     const authController = req.container.resolve('authController');
     await authController.logoutUser(req, res, next);
+  },
+);
+
+/**
+ * @openapi
+ * /api/v1/auth/admin/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Tạo tài khoản admin mới
+ *     description: |
+ *       Chỉ **admin đã đăng nhập** mới được gọi endpoint này.
+ *       Role `admin` được gán tự động cho tài khoản mới.
+ *       Tài khoản admin đầu tiên cần được seed trực tiếp vào database.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, phone, password]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Admin Hệ Thống
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: admin@medsreminder.com
+ *               phone:
+ *                 type: string
+ *                 example: "0909999999"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 6
+ *                 example: matkhau123
+ *     responses:
+ *       201:
+ *         description: Tạo admin thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Đăng ký tài khoản admin thành công
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Dữ liệu không hợp lệ / Email hoặc SĐT đã tồn tại / Role admin chưa khởi tạo
+ *       401:
+ *         description: Chưa đăng nhập hoặc token không hợp lệ
+ *       403:
+ *         description: Chỉ admin mới có quyền tạo tài khoản admin
+ */
+router.post(
+  '/admin/register',
+  authentication,
+  authorizationByRole(['admin']),
+  validateData(registerAdminSchema),
+  async (req, res, next) => {
+    const authController = req.container.resolve('authController');
+    await authController.registerAdmin(req, res, next);
   },
 );
 

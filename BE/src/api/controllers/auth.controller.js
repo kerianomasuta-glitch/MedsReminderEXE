@@ -89,6 +89,22 @@ class AuthController {
       next(error);
     }
   };
+
+  registerAdmin = async (req, res, next) => {
+    try {
+      const { email, password, phone, name } = req.body;
+      const newUser = await this.authService.registerAdmin({
+        email, password, phone, name,
+      });
+      res.status(201).json({
+        status: 'success',
+        message: 'Đăng ký tài khoản admin thành công',
+        data: newUser,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AuthController;

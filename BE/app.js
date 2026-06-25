@@ -13,8 +13,16 @@ configDotenv();
 
 const app = express();
 
-const fallbackOrigins = ['http://localhost:8081', 'http://localhost:5173'];
-const envOrigins = (process.env.FRONTEND_URL ?? '')
+const fallbackOrigins = [
+  'http://localhost:8081', // Expo
+  'http://localhost:5173', // Vite / web dev
+  'http://localhost:3000', // Swagger UI (cùng port với API)
+];
+const envOrigins = [
+  ...(process.env.FRONTEND_URL ?? ''),
+  process.env.BACKEND_URL ?? '',
+]
+  .join(',')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
