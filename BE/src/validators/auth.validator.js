@@ -33,15 +33,6 @@ const name = Joi.string()
     'string.max': 'Họ tên không được quá 100 ký tự',
   });
 
-const gender = Joi.string().valid('male', 'female', 'other');
-
-const patientProfileFields = {
-  birthday: Joi.date().iso().max('now').messages({
-    'date.max': 'Ngày sinh không hợp lệ',
-  }),
-  gender,
-};
-
 /** Caregiver đăng ký tài khoản (endpoint /auth/register) */
 export const registerCaregiverSchema = Joi.object({
   name: name.required(),
@@ -90,22 +81,6 @@ export const loginPatientSchema = Joi.object({
     'any.required': 'Số điện thoại người thân là bắt buộc',
   }),
   authPin: authPin.required(),
-});
-
-/** Caregiver tạo hồ sơ bệnh nhân */
-export const createPatientSchema = Joi.object({
-  name: name.required(),
-  authPin: authPin.required(),
-  ...patientProfileFields,
-});
-
-/** Caregiver cập nhật hồ sơ bệnh nhân */
-export const updatePatientSchema = Joi.object({
-  name,
-  authPin: authPin.optional(),
-  ...patientProfileFields,
-}).min(1).messages({
-  'object.min': 'Cần ít nhất một trường để cập nhật',
 });
 
 /** Caregiver đăng nhập Google */

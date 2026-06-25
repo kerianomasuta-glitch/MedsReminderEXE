@@ -4,6 +4,9 @@ class CaregiverPatientRepository {
   create = async ({ caregiverId, patientId, createdBy, authPin }) =>
     CaregiverPatient.create({ caregiverId, patientId, createdBy, authPin });
 
+  findByIdWithPatient = async (id) =>
+    CaregiverPatient.findById(id).populate('patientId');
+
   findByCaregiverAndPatient = async ({ caregiverId, patientId }) =>
     CaregiverPatient.findOne({ caregiverId, patientId });
 
