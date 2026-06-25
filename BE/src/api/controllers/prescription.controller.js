@@ -3,10 +3,15 @@ class PrescriptionController {
     this.prescriptionService = prescriptionService;
   }
 
+  #actor(req) {
+    return { userId: req.user.userId, roleName: req.user.roleName };
+  }
+
   createPrescription = async (req, res, next) => {
     try {
       const { patientId, title, medications, startDate, endDate, prescribedAt, doctorName, note } = req.body;
       const prescription = await this.prescriptionService.createPrescription({
+        actor: this.#actor(req),
         patientId,
         createdBy: req.user.userId,
         title,
@@ -32,6 +37,7 @@ class PrescriptionController {
       const { id } = req.params;
       const { title, medications, startDate, endDate, prescribedAt, doctorName, note, isActive } = req.body;
       const prescription = await this.prescriptionService.updatePrescription({
+        actor: this.#actor(req),
         id,
         data: { title, medications, startDate, endDate, prescribedAt, doctorName, note, isActive },
       });
@@ -52,6 +58,7 @@ class PrescriptionController {
       const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
 
       const { prescriptions, total } = await this.prescriptionService.getPrescriptionsByPatient({
+        actor: this.#actor(req),
         patientId,
         limit,
         page,
@@ -68,7 +75,10 @@ class PrescriptionController {
 
   getPrescriptionById = async (req, res, next) => {
     try {
-      const prescription = await this.prescriptionService.getPrescriptionById(req.params.id);
+      const prescription = await this.prescriptionService.getPrescriptionById({
+        actor: this.#actor(req),
+        id: req.params.id,
+      });
       res.json({
         status: 'success',
         message: 'Lấy thông tin đơn thuốc thành công',
@@ -81,7 +91,10 @@ class PrescriptionController {
 
   deletePrescription = async (req, res, next) => {
     try {
-      await this.prescriptionService.deletePrescription(req.params.id);
+      await this.prescriptionService.deletePrescription({
+        actor: this.#actor(req),
+        id: req.params.id,
+      });
       res.json({
         status: 'success',
         message: 'Xóa đơn thuốc thành công',
