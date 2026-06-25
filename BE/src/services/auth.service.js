@@ -9,11 +9,18 @@ const SALT_ROUNDS = 10;
 const ALLOWED_LOGIN_ROLES = ['caregiver', 'admin'];
 
 class AuthService {
-  constructor({ userRepository, roleRepository, tokenService, caregiverPatientRepository }) {
+  constructor({
+    userRepository,
+    roleRepository,
+    tokenService,
+    caregiverPatientRepository,
+    caregiverPatientService,
+  }) {
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.tokenService = tokenService;
     this.caregiverPatientRepository = caregiverPatientRepository;
+    this.caregiverPatientService = caregiverPatientService;
   }
 
   #sanitizeUser(user) {
@@ -116,7 +123,8 @@ class AuthService {
       throw new AuthenticationError('SĐT người thân hoặc mã PIN không đúng');
     }
 
-    const linkedMappings = await this.caregiverPatientRepository.findLinkedByCaregiverIdWithPin(caregiver._id);
+    const linkedMappings = await this.caregiverPatientRepository
+      .findLinkedByCaregiverIdWithPin(caregiver._id);
     if (!linkedMappings.length) {
       throw new AuthenticationError('Người thân chưa liên kết bệnh nhân');
     }
@@ -169,29 +177,16 @@ class AuthService {
       throw new ForbiddenError('Chỉ người thân chăm sóc mới có quyền tạo bệnh nhân');
     }
 
-    const patientRole = await this.roleRepository.findRoleByName('patient');
-    if (!patientRole) {
-      throw new BadRequestError('Role patient chưa được khởi tạo trong hệ thống');
-    }
-
-    const patient = await this.userRepository.createPatient({
+    const mapping = await this.caregiverPatientService.createPatient({
+      caregiverId,
       name: name.trim(),
-      roleId: patientRole._id,
+      authPin,
       birthday: birthday ? new Date(birthday) : undefined,
       gender,
     });
 
-    const hashedPin = await bcrypt.hash(authPin, SALT_ROUNDS);
-
-    await this.caregiverPatientRepository.create({
-      caregiverId: caregiver._id,
-      patientId: patient._id,
-      createdBy: caregiver._id,
-      authPin: hashedPin,
-    });
-
     return {
-      patient: this.#sanitizeUser(patient),
+      patient: this.#sanitizeUser(mapping.patientId),
       loginFields: {
         caregiverPhone: caregiver.phone,
         authPin,
