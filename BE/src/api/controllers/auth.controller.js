@@ -56,41 +56,6 @@ class AuthController {
     }
   };
 
-  getMyPatients = async (req, res, next) => {
-    try {
-      const data = await this.authService.getMyPatients({
-        caregiverId: req.user.userId,
-      });
-      res.json({
-        status: 'success',
-        message: 'Lấy danh sách bệnh nhân thành công',
-        data,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  createPatientForCaregiver = async (req, res, next) => {
-    try {
-      const { name, authPin, birthday, gender } = req.body;
-      const result = await this.authService.createPatientForCaregiver({
-        caregiverId: req.user.userId,
-        name,
-        authPin,
-        birthday,
-        gender,
-      });
-      res.status(201).json({
-        status: 'success',
-        message: 'Tạo bệnh nhân thành công',
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
   refreshUserToken = async (req, res, next) => {
     try {
       const { refreshToken, deviceId } = req.body;

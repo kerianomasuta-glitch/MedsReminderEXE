@@ -3,13 +3,26 @@ class CaregiverPatientController {
     this.caregiverPatientService = caregiverPatientService;
   }
 
+  getMyPatients = async (req, res, next) => {
+    try {
+      const data = await this.caregiverPatientService.getMyPatients({
+        caregiverId: req.user.userId,
+      });
+      res.json({
+        status: 'success',
+        message: 'Lấy danh sách bệnh nhân thành công',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   createPatient = async (req, res, next) => {
     try {
-      const caregiverId = req.user.userId;
       const { name, authPin, birthday, gender } = req.body;
-
       const result = await this.caregiverPatientService.createPatient({
-        caregiverId,
+        caregiverId: req.user.userId,
         name,
         authPin,
         birthday,
@@ -18,7 +31,7 @@ class CaregiverPatientController {
 
       res.status(201).json({
         status: 'success',
-        message: 'Tạo hồ sơ bệnh nhân thành công',
+        message: 'Tạo bệnh nhân thành công',
         data: result,
       });
     } catch (error) {

@@ -29,6 +29,12 @@ class UserRepository {
     await user.save();
     return user.populate('roleId');
   };
+
+  createAdmin = async ({ email, password, phone, name, roleId }) => {
+    const user = new User({ email, password, phone, name, roleId });
+    await user.save();
+    return user.populate('roleId');
+  };
 }
 
 export default UserRepository;
