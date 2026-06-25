@@ -209,10 +209,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       if (state.accessToken && state.deviceId) {
-        await logoutApi({
-          accessToken: state.accessToken,
-          deviceId: state.deviceId,
-        });
+        try {
+          await logoutApi({
+            accessToken: state.accessToken,
+            deviceId: state.deviceId,
+          });
+        } catch {
+          // Token may already be expired or invalid; still clear local session.
+        }
       }
     } finally {
       await applyGuestState();
