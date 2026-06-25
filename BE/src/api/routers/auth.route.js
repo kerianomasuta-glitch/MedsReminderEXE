@@ -2,12 +2,15 @@ import express from 'express';
 import {
   registerCaregiverSchema,
   loginCaregiverSchema,
+  loginPatientSchema,
+  createPatientSchema,
   refreshTokenSchema,
   logoutSchema,
 } from '../../validators/auth.validator.js';
 import {
   validateData,
   authentication,
+  authorizationByRole,
   getUserDeviceName,
 } from '../middleware/middleware.js';
 
@@ -147,6 +150,37 @@ router.post(
   async (req, res, next) => {
     const authController = req.container.resolve('authController');
     await authController.loginUser(req, res, next);
+  },
+);
+
+router.post(
+  '/patient-login',
+  getUserDeviceName,
+  validateData(loginPatientSchema),
+  async (req, res, next) => {
+    const authController = req.container.resolve('authController');
+    await authController.loginPatient(req, res, next);
+  },
+);
+
+router.get(
+  '/my-patients',
+  authentication,
+  authorizationByRole(['caregiver', 'admin']),
+  async (req, res, next) => {
+    const authController = req.container.resolve('authController');
+    await authController.getMyPatients(req, res, next);
+  },
+);
+
+router.post(
+  '/patients',
+  authentication,
+  authorizationByRole(['caregiver', 'admin']),
+  validateData(createPatientSchema),
+  async (req, res, next) => {
+    const authController = req.container.resolve('authController');
+    await authController.createPatientForCaregiver(req, res, next);
   },
 );
 
