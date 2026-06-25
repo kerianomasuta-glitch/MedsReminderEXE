@@ -38,11 +38,6 @@ const prescriptionSchema = new mongoose.Schema(
       ],
       default: [],
     },
-    status: {
-      type: String,
-      enum: ['active', 'completed', 'cancelled'],
-      default: 'active',
-    },
     isActive: {
       type: Boolean,
       default: true,
@@ -51,7 +46,7 @@ const prescriptionSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-prescriptionSchema.index({ patientId: 1, status: 1 });
+prescriptionSchema.index({ patientId: 1, createdAt: -1 });
 prescriptionSchema.index({ patientId: 1, isActive: 1 });
 
 export default mongoose.model('Prescription', prescriptionSchema);
