@@ -2,30 +2,52 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ActionButton, AppScreen, ChoiceChip, PageHeader, SectionCard, TextField } from '@/components/meds/ui-kit';
+import { FeedbackToast } from '@/components/meds/feedback-toast';
+import { ActionButton, AppScreen, PageHeader, SectionCard, TextField } from '@/components/meds/ui-kit';
+import { useAuth } from '@/store/auth-store';
 
 export default function RegisterScreen() {
+  const { register } = useAuth();
   const [fullName, setFullName] = useState('');
-  const [account, setAccount] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'primary' | 'caregiver'>('primary');
   const [accepted, setAccepted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const nameError = submitted && !fullName.trim() ? 'Vui lòng nhập họ tên.' : undefined;
-  const accountError = submitted && !account.trim() ? 'Vui lòng nhập email hoặc số điện thoại.' : undefined;
+  const emailError = submitted && !email.trim() ? 'Vui lòng nhập email.' : undefined;
+  const phoneError = submitted && !phone.trim() ? 'Vui lòng nhập số điện thoại.' : undefined;
   const passwordError = submitted && password.length < 6 ? 'Mật khẩu tối thiểu 6 ký tự.' : undefined;
   const confirmError =
     submitted && confirmPassword !== password ? 'Mật khẩu xác nhận không khớp.' : undefined;
   const termsError = submitted && !accepted ? 'Bạn cần đồng ý điều khoản.' : undefined;
 
-  const submit = () => {
+  const submit = async () => {
+    if (isSubmitting) return;
     setSubmitted(true);
-    if (nameError || accountError || passwordError || confirmError || termsError) {
+    if (nameError || emailError || phoneError || passwordError || confirmError || termsError) {
       return;
     }
-    router.replace('/login');
+    try {
+      setIsSubmitting(true);
+      await register({
+        name: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        password,
+      });
+      setFeedbackMessage('Đăng ký thành công, vui lòng đăng nhập.');
+      router.replace('/login');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đăng ký thất bại';
+      setFeedbackMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -41,11 +63,18 @@ export default function RegisterScreen() {
           error={nameError}
         />
         <TextField
-          label="Email hoặc số điện thoại"
-          value={account}
-          onChangeText={setAccount}
-          placeholder="example@mail.com hoặc 09xxxxxxxx"
-          error={accountError}
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="example@mail.com"
+          error={emailError}
+        />
+        <TextField
+          label="Số điện thoại"
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="09xxxxxxxx"
+          error={phoneError}
         />
         <TextField
           label="Mật khẩu"
@@ -64,12 +93,6 @@ export default function RegisterScreen() {
           error={confirmError}
         />
 
-        <Text style={styles.sectionTitle}>Vai trò</Text>
-        <View style={styles.roleRow}>
-          <ChoiceChip label="Người dùng chính" active={role === 'primary'} onPress={() => setRole('primary')} />
-          <ChoiceChip label="Người thân" active={role === 'caregiver'} onPress={() => setRole('caregiver')} />
-        </View>
-
         <Pressable
           onPress={() => setAccepted((prev) => !prev)}
           style={({ pressed, hovered }) => [styles.checkboxRow, (pressed || hovered) && styles.activeRow]}>
@@ -78,27 +101,22 @@ export default function RegisterScreen() {
         </Pressable>
         {termsError ? <Text style={styles.errorText}>{termsError}</Text> : null}
 
-        <ActionButton label="Tạo tài khoản" onPress={submit} />
+        <ActionButton label={isSubmitting ? 'Đang tạo...' : 'Tạo tài khoản'} onPress={submit} />
 
         <Pressable style={styles.backLink} onPress={() => router.push('/login')}>
           <Text style={styles.backText}>Đã có tài khoản? Đăng nhập</Text>
         </Pressable>
       </SectionCard>
+      <FeedbackToast
+        message={feedbackMessage}
+        tone={feedbackMessage?.includes('thành công') ? 'success' : 'warning'}
+        onHide={() => setFeedbackMessage(null)}
+      />
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0F223D',
-  },
-  roleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
   checkboxRow: {
     minHeight: 44,
     borderRadius: 10,

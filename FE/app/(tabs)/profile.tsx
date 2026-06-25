@@ -6,8 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandHeader } from '@/components/meds/ui-kit';
 import { profileMenuItems } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
+import { useAuth } from '@/store/auth-store';
 
 export default function ProfileScreen() {
+  const { logout } = useAuth();
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -21,7 +24,7 @@ export default function ProfileScreen() {
             style={({ pressed, hovered }) => [styles.rowButton, (pressed || hovered) && styles.rowButtonActive]}
             onPress={() => {
               if (item.route === '/login') {
-                router.replace('/login');
+                void logout();
                 return;
               }
               router.push(item.route);

@@ -38,6 +38,24 @@ class AuthController {
     }
   };
 
+  loginPatient = async (req, res, next) => {
+    try {
+      const { caregiverPhone, authPin } = req.body;
+      const result = await this.authService.loginPatient({
+        caregiverPhone,
+        authPin,
+        deviceName: req.device,
+      });
+      res.json({
+        status: 'success',
+        message: 'Đăng nhập bệnh nhân thành công',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   refreshUserToken = async (req, res, next) => {
     try {
       const { refreshToken, deviceId } = req.body;
@@ -66,6 +84,22 @@ class AuthController {
       res.json({
         status: 'success',
         message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  registerAdmin = async (req, res, next) => {
+    try {
+      const { email, password, phone, name } = req.body;
+      const newUser = await this.authService.registerAdmin({
+        email, password, phone, name,
+      });
+      res.status(201).json({
+        status: 'success',
+        message: 'Đăng ký tài khoản admin thành công',
+        data: newUser,
       });
     } catch (error) {
       next(error);

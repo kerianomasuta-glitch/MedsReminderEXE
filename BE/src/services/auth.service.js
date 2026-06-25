@@ -9,10 +9,11 @@ const SALT_ROUNDS = 10;
 const ALLOWED_LOGIN_ROLES = ['caregiver', 'admin'];
 
 class AuthService {
-  constructor({ userRepository, roleRepository, tokenService }) {
+  constructor({ userRepository, roleRepository, tokenService, caregiverPatientService }) {
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.tokenService = tokenService;
+    this.caregiverPatientService = caregiverPatientService;
   }
 
   #sanitizeUser(user) {
@@ -104,6 +105,19 @@ class AuthService {
     };
   }
 
+  async loginPatient({ caregiverPhone, authPin, deviceName = 'unknown' }) {
+    const patient = await this.caregiverPatientService.authenticatePatient({
+      caregiverPhone,
+      authPin,
+    });
+
+    const tokens = await this.#issueTokens(patient, deviceName);
+    return {
+      user: this.#sanitizeUser(patient),
+      ...tokens,
+    };
+  }
+
   async refreshUserToken({ refreshToken, deviceId, deviceName = 'unknown' }) {
     const decoded = await this.tokenService.verifyRefreshToken({ token: refreshToken });
 
@@ -132,6 +146,32 @@ class AuthService {
       throw new AuthenticationError('Phiên đăng nhập không tồn tại hoặc đã hết hạn');
     }
     return { message: 'Đăng xuất thành công' };
+  }
+
+  async registerAdmin({ email, password, phone, name }) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedPhone = phone.trim();
+    const existingUser = await this.userRepository.findUserByEmail(normalizedEmail);
+    if (existingUser) {
+      throw new BadRequestError('Email đã tồn tại');
+    }
+    const existingUserByPhone = await this.userRepository.findUserByPhone(normalizedPhone);
+    if (existingUserByPhone) {
+      throw new BadRequestError('Số điện thoại đã tồn tại');
+    }
+    const adminRole = await this.roleRepository.findRoleByName('admin');
+    if (!adminRole) {
+      throw new BadRequestError('Role admin chưa được khởi tạo trong hệ thống');
+    }
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const newUser = await this.userRepository.createAdmin({
+      email: normalizedEmail,
+      password: hashedPassword,
+      phone: normalizedPhone,
+      name,
+      roleId: adminRole._id,
+    });
+    return this.#sanitizeUser(newUser);
   }
 }
 

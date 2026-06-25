@@ -8,9 +8,9 @@ const medicationScheduleSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    medicationId: {
+    prescriptionId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Medication',
+      ref: 'Prescription',
       required: true,
       index: true,
     },

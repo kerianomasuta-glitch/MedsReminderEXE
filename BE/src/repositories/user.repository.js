@@ -5,6 +5,9 @@ class UserRepository {
 
   findUserByPhone = async (phone) => User.findOne({ phone });
 
+  findUserByPhoneWithRole = async (phone) =>
+    User.findOne({ phone: phone.trim() }).populate('roleId');
+
   findUserByEmailWithPassword = async (email) =>
     User.findOne({ email }).select('+password').populate('roleId');
 
@@ -23,6 +26,12 @@ class UserRepository {
 
   createPatient = async ({ name, roleId, birthday, gender }) => {
     const user = new User({ name, roleId, birthday, gender });
+    await user.save();
+    return user.populate('roleId');
+  };
+
+  createAdmin = async ({ email, password, phone, name, roleId }) => {
+    const user = new User({ email, password, phone, name, roleId });
     await user.save();
     return user.populate('roleId');
   };
