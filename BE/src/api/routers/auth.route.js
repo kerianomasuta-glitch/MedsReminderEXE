@@ -6,9 +6,11 @@ import {
   refreshTokenSchema,
   logoutSchema,
 } from '../../validators/auth.validator.js';
+import { createPatientSchema } from '../../validators/caregiverPatient.validator.js';
 import {
   validateData,
   authentication,
+  authorizationByRole,
   getUserDeviceName,
 } from '../middleware/middleware.js';
 
@@ -153,14 +155,13 @@ router.post(
 
 /**
  * @openapi
- * /api/v1/auth/login/patient:
+ * /api/v1/auth/patient-login:
  *   post:
  *     tags: [Auth]
  *     summary: Đăng nhập bệnh nhân (PIN)
  *     description: |
  *       Bệnh nhân đăng nhập bằng **số điện thoại của người thân (caregiver)** và **mã PIN 4 số**
- *       do caregiver đặt khi tạo hồ sơ. Hệ thống so khớp PIN với từng bệnh nhân đã liên kết
- *       với caregiver đó và trả JWT cho đúng bệnh nhân.
+ *       do caregiver đặt khi tạo hồ sơ.
  *     security: []
  *     requestBody:
  *       required: true
@@ -172,11 +173,9 @@ router.post(
  *             properties:
  *               caregiverPhone:
  *                 type: string
- *                 description: SĐT đăng ký của người thân (caregiver)
  *                 example: "0901234567"
  *               authPin:
  *                 type: string
- *                 description: Mã PIN 4 chữ số
  *                 example: "1234"
  *     responses:
  *       200:
@@ -191,19 +190,94 @@ router.post(
  *                   example: success
  *                 message:
  *                   type: string
- *                   example: Đăng nhập thành công
+ *                   example: Đăng nhập bệnh nhân thành công
  *                 data:
  *                   $ref: '#/components/schemas/AuthTokensResponse'
  *       401:
  *         description: SĐT người thân hoặc mã PIN không đúng
  */
 router.post(
-  '/login/patient',
+  '/patient-login',
   getUserDeviceName,
   validateData(loginPatientSchema),
   async (req, res, next) => {
     const authController = req.container.resolve('authController');
     await authController.loginPatient(req, res, next);
+  },
+);
+
+/**
+ * @openapi
+ * /api/v1/auth/my-patients:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Danh sách bệnh nhân của caregiver
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách thành công
+ *       401:
+ *         description: Chưa đăng nhập
+ *       403:
+ *         description: Không có quyền
+ */
+router.get(
+  '/my-patients',
+  authentication,
+  authorizationByRole(['caregiver', 'admin']),
+  async (req, res, next) => {
+    const authController = req.container.resolve('authController');
+    await authController.getMyPatients(req, res, next);
+  },
+);
+
+/**
+ * @openapi
+ * /api/v1/auth/patients:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Tạo bệnh nhân (caregiver)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, authPin]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Nguyễn Văn Ba
+ *               authPin:
+ *                 type: string
+ *                 example: "1234"
+ *               birthday:
+ *                 type: string
+ *                 format: date
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female, other]
+ *     responses:
+ *       201:
+ *         description: Tạo bệnh nhân thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ / PIN trùng
+ *       401:
+ *         description: Chưa đăng nhập
+ *       403:
+ *         description: Không có quyền
+ */
+router.post(
+  '/patients',
+  authentication,
+  authorizationByRole(['caregiver', 'admin']),
+  validateData(createPatientSchema),
+  async (req, res, next) => {
+    const authController = req.container.resolve('authController');
+    await authController.createPatientForCaregiver(req, res, next);
   },
 );
 

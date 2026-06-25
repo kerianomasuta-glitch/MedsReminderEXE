@@ -13,8 +13,22 @@ configDotenv();
 
 const app = express();
 
+const fallbackOrigins = ['http://localhost:8081', 'http://localhost:5173'];
+const envOrigins = (process.env.FRONTEND_URL ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...fallbackOrigins, ...envOrigins])];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
 }));
 
 app.use(express.json());
