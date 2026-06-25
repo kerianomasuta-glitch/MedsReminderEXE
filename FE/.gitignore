@@ -46,3 +46,5 @@ app-example
 .gradle/
 android/.gradle/
 android/build/
+
+.env
