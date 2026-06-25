@@ -1,0 +1,27 @@
+{
+  "name": "medsreminder-be",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MedsReminder backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "awilix": "^13.0.5",
+    "awilix-express": "^11.0.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "joi": "^17.13.3",
+    "mongoose": "^9.7.2",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
+    "ua-parser-js": "^2.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
