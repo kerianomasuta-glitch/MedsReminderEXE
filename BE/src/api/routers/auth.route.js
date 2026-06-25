@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-  registerUserSchema,
+  registerCaregiverSchema,
   loginCaregiverSchema,
   refreshTokenSchema,
   logoutSchema,
@@ -25,8 +25,10 @@ const router = express.Router();
  * /api/v1/auth/register:
  *   post:
  *     tags: [Auth]
- *     summary: Đăng ký tài khoản
- *     description: Tạo tài khoản mới với role được chỉ định qua roleId.
+ *     summary: Đăng ký tài khoản người thân (Caregiver)
+ *     description: |
+ *       Chỉ dành cho người thân tự đăng ký. Role `caregiver` được gán tự động.
+ *       Bệnh nhân không đăng ký qua endpoint này — được tạo bởi caregiver sau khi đăng nhập.
  *     security: []
  *     requestBody:
  *       required: true
@@ -34,7 +36,7 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, phone, password, roleId]
+ *             required: [name, email, phone, password]
  *             properties:
  *               name:
  *                 type: string
@@ -45,29 +47,13 @@ const router = express.Router();
  *                 example: nguyenvana@example.com
  *               phone:
  *                 type: string
- *                 description: 10 số, bắt đầu bằng 0
+ *                 description: SĐT người thân — bệnh nhân dùng số này khi đăng nhập bằng PIN
  *                 example: "0901234567"
  *               password:
  *                 type: string
  *                 format: password
  *                 minLength: 6
  *                 example: matkhau123
- *               roleId:
- *                 type: string
- *                 description: ObjectId của role
- *                 example: 64f000000000000000000010
- *               authPin:
- *                 type: string
- *                 description: Mã PIN 4 chữ số (tuỳ chọn)
- *                 example: "1234"
- *               birthday:
- *                 type: string
- *                 format: date
- *                 example: "1990-05-20"
- *               gender:
- *                 type: string
- *                 enum: [male, female, other]
- *                 example: male
  *     responses:
  *       201:
  *         description: Đăng ký thành công
@@ -81,18 +67,18 @@ const router = express.Router();
  *                   example: success
  *                 message:
  *                   type: string
- *                   example: User registered successfully
+ *                   example: Đăng ký tài khoản người thân thành công
  *                 data:
  *                   $ref: '#/components/schemas/User'
  *       400:
- *         description: Dữ liệu không hợp lệ / Email - SĐT đã tồn tại / Role không tồn tại
+ *         description: Dữ liệu không hợp lệ / Email hoặc SĐT đã tồn tại / Role caregiver chưa khởi tạo
  */
 router.post(
   '/register',
-  validateData(registerUserSchema),
+  validateData(registerCaregiverSchema),
   async (req, res, next) => {
     const authController = req.container.resolve('authController');
-    await authController.registerUser(req, res, next);
+    await authController.registerCaregiver(req, res, next);
   },
 );
 

@@ -19,6 +19,11 @@ const caregiverPatientSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    authPin: {
+      type: String,
+      required: true,
+      select: false,
+    },
     status: {
       type: String,
       enum: ['pending', 'linked', 'rejected', 'removed'],

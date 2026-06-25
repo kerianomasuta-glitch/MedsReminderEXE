@@ -9,6 +9,7 @@ import RoleService from './src/services/role.service.js';
 import TokenService from './src/services/token.service.js';
 // import repositories
 import userRepository from './src/repositories/user.repository.js';
+import CaregiverPatientRepository from './src/repositories/caregiverPatient.repository.js';
 import RoleRepository from './src/repositories/role.repository.js';
 // import infrastructure
 import redisClient from './src/config/redis.js';
@@ -26,6 +27,7 @@ export function setupContainer() {
     tokenService: asClass(TokenService).singleton(),
     // repositories
     userRepository: asClass(userRepository).singleton(),
+    caregiverPatientRepository: asClass(CaregiverPatientRepository).singleton(),
     roleRepository: asClass(RoleRepository).singleton(),
     // infrastructure
     redisClient: asValue(redisClient),

@@ -18,7 +18,6 @@ class AuthService {
   #sanitizeUser(user) {
     const obj = typeof user.toObject === 'function' ? user.toObject() : { ...user };
     delete obj.password;
-    delete obj.authPin;
     return obj;
   }
 
@@ -46,16 +45,8 @@ class AuthService {
     return tokens;
   }
 
-  async registerUser({
-    email,
-    password,
-    phone,
-    name,
-    roleId,
-    authPin,
-    birthday,
-    gender,
-  }) {
+  /** Chỉ caregiver được tự đăng ký */
+  async registerCaregiver({ email, password, phone, name }) {
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedPhone = phone.trim();
 
@@ -69,23 +60,19 @@ class AuthService {
       throw new BadRequestError('Số điện thoại đã tồn tại');
     }
 
-    const role = await this.roleRepository.findRoleById(roleId);
-    if (!role) {
-      throw new BadRequestError('Role không tồn tại');
+    const caregiverRole = await this.roleRepository.findRoleByName('caregiver');
+    if (!caregiverRole) {
+      throw new BadRequestError('Role caregiver chưa được khởi tạo trong hệ thống');
     }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    const hashedAuthPin = authPin ? await bcrypt.hash(authPin, SALT_ROUNDS) : undefined;
 
-    const newUser = await this.userRepository.createUser({
+    const newUser = await this.userRepository.createCaregiver({
       email: normalizedEmail,
       password: hashedPassword,
       phone: normalizedPhone,
       name,
-      roleId,
-      authPin: hashedAuthPin,
-      birthday,
-      gender,
+      roleId: caregiverRole._id,
     });
 
     return this.#sanitizeUser(newUser);
