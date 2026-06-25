@@ -14,10 +14,11 @@ const medicationLogSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    medicationId: {
+    prescriptionId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Medication',
+      ref: 'Prescription',
       required: true,
+      index: true,
     },
     expectedTime: {
       type: Date,
@@ -34,7 +35,11 @@ const medicationLogSchema = new mongoose.Schema(
     skipReason: String,
     note: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+medicationLogSchema.index({ patientId: 1, expectedTime: -1 });
+medicationLogSchema.index({ scheduleId: 1, expectedTime: -1 });
+medicationLogSchema.index({ patientId: 1, status: 1 });
 
 export default mongoose.model('MedicationLog', medicationLogSchema);
