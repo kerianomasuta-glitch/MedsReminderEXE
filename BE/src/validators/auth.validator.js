@@ -35,25 +35,14 @@ const name = Joi.string()
 
 const gender = Joi.string().valid('male', 'female', 'other');
 
-const objectId = Joi.string()
-  .pattern(/^[0-9a-fA-F]{24}$/)
-  .messages({
-    'string.pattern.base': 'ID không hợp lệ',
-  });
-
 const patientProfileFields = {
   birthday: Joi.date().iso().max('now').messages({
     'date.max': 'Ngày sinh không hợp lệ',
   }),
   gender,
-  conditions: Joi.array().items(Joi.string().trim().max(100)).max(20),
-  allergies: Joi.string().trim().max(500).allow(''),
-  emergencyContact: Joi.string().trim().max(100).allow(''),
-  emergencyPhone: phone.allow(''),
-  notes: Joi.string().trim().max(1000).allow(''),
 };
 
-/** Caregiver đăng ký tài khoản */
+/** Caregiver đăng ký tài khoản (endpoint /auth/register) */
 export const registerCaregiverSchema = Joi.object({
   name: name.required(),
   email: Joi.string().email().lowercase().trim().required().messages({
@@ -62,25 +51,6 @@ export const registerCaregiverSchema = Joi.object({
   }),
   phone: phone.required(),
   password: password.required(),
-});
-
-/** Đăng ký user (chọn role theo roleId) */
-export const registerUserSchema = Joi.object({
-  name: name.required(),
-  email: Joi.string().email().lowercase().trim().required().messages({
-    'any.required': 'Email là bắt buộc',
-    'string.email': 'Email không hợp lệ',
-  }),
-  phone: phone.required(),
-  password: password.required(),
-  roleId: objectId.required().messages({
-    'any.required': 'roleId là bắt buộc',
-  }),
-  authPin: authPin.optional(),
-  birthday: Joi.date().iso().max('now').optional().messages({
-    'date.max': 'Ngày sinh không hợp lệ',
-  }),
-  gender: gender.optional(),
 });
 
 /** Caregiver + Admin đăng nhập (email hoặc SĐT + mật khẩu) */

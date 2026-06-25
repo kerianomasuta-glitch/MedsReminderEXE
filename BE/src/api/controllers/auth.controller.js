@@ -3,15 +3,15 @@ class AuthController {
     this.authService = authService;
   }
 
-  registerUser = async (req, res, next) => {
+  registerCaregiver = async (req, res, next) => {
     try {
-      const { email, password, phone, name, roleId, authPin, birthday, gender } = req.body;
-      const newUser = await this.authService.registerUser({
-        email, password, phone, name, roleId, authPin, birthday, gender,
+      const { email, password, phone, name } = req.body;
+      const newUser = await this.authService.registerCaregiver({
+        email, password, phone, name,
       });
       res.status(201).json({
         status: 'success',
-        message: 'User registered successfully',
+        message: 'Đăng ký tài khoản người thân thành công',
         data: newUser,
       });
     } catch (error) {

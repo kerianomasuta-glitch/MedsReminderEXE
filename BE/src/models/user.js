@@ -24,10 +24,6 @@ const userSchema = new mongoose.Schema(
       ref: 'Role',
       required: true,
     },
-    authPin: {
-      type: String,
-      select: false,
-    },
     name: {
       type: String,
       trim: true,

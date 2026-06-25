@@ -15,28 +15,16 @@ class UserRepository {
 
   findUserByGoogleId = async (googleId) => User.findOne({ googleId });
 
-  createUser = async ({
-    email,
-    password,
-    phone,
-    name,
-    roleId,
-    authPin,
-    birthday,
-    gender,
-  }) => {
-    const newUser = new User({
-      email,
-      phone,
-      password,
-      name,
-      roleId,
-      authPin,
-      birthday,
-      gender,
-    });
-    await newUser.save();
-    return newUser;
+  createCaregiver = async ({ email, password, phone, name, roleId }) => {
+    const user = new User({ email, password, phone, name, roleId });
+    await user.save();
+    return user.populate('roleId');
+  };
+
+  createPatient = async ({ name, roleId, birthday, gender }) => {
+    const user = new User({ name, roleId, birthday, gender });
+    await user.save();
+    return user.populate('roleId');
   };
 }
 
