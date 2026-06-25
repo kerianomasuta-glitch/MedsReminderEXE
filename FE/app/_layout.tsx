@@ -27,22 +27,14 @@ function RootLayoutContent() {
 
   useEffect(() => {
     const firstSegment = segments[0];
-    const secondSegment = segments[1];
     const isPublicRoute = firstSegment === 'login' || firstSegment === 'register';
-    const isChooseRoleRoute = firstSegment === 'choose-role';
-    const isCaregiverOnboardingRoute = firstSegment === 'caregiver' && secondSegment === 'create-patient';
 
     if (status === 'guest' && !isPublicRoute) {
       router.replace('/login');
       return;
     }
 
-    if (status === 'authenticated' && role === 'caregiver' && !portal && !isChooseRoleRoute && !isCaregiverOnboardingRoute) {
-      router.replace('/choose-role');
-      return;
-    }
-
-    if (status === 'authenticated' && (isPublicRoute || isChooseRoleRoute)) {
+    if (status === 'authenticated' && isPublicRoute) {
       router.replace(getDefaultRouteByRole(role, portal));
     }
   }, [status, role, portal, segments]);
@@ -61,7 +53,6 @@ function RootLayoutContent() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Đăng nhập', headerShadowVisible: false }} />
         <Stack.Screen name="register" options={{ title: 'Đăng ký', headerShadowVisible: false }} />
-        <Stack.Screen name="choose-role" options={{ title: 'Chọn vai trò', headerShadowVisible: false }} />
         <Stack.Screen name="profile-health" options={{ title: 'Hồ sơ sức khỏe', headerShadowVisible: false }} />
         <Stack.Screen name="medicines/new" options={{ title: 'Thêm thuốc mới', headerShadowVisible: false }} />
         <Stack.Screen name="medicines/[id]/edit" options={{ title: 'Chỉnh sửa thuốc', headerShadowVisible: false }} />
@@ -71,10 +62,6 @@ function RootLayoutContent() {
         <Stack.Screen
           name="caregiver/dashboard"
           options={{ title: 'Dashboard người thân', headerShadowVisible: false }}
-        />
-        <Stack.Screen
-          name="caregiver/create-patient"
-          options={{ title: 'Tạo bệnh nhân', headerShadowVisible: false }}
         />
         <Stack.Screen name="appointments" options={{ title: 'Lịch tái khám', headerShadowVisible: false }} />
         <Stack.Screen name="appointments/new" options={{ title: 'Thêm lịch khám', headerShadowVisible: false }} />
