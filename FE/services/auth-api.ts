@@ -5,6 +5,9 @@ export type AuthUser = {
   name?: string;
   email?: string;
   phone?: string;
+  birthday?: string;
+  gender?: 'male' | 'female' | 'other';
+  isActive?: boolean;
   roleId?: { roleName?: string } | string;
 };
 
@@ -83,7 +86,7 @@ export async function logoutApi(params: { accessToken: string; deviceId: string 
 
 export async function getMyPatientsApi(params: { accessToken: string }) {
   return requestJson<{ status: string; message: string; data: Array<{ mappingId: string; linkedAt: string; patient: AuthUser }> }>(
-    '/api/v1/auth/my-patients',
+    '/api/v1/patients',
     {
       method: 'GET',
       headers: {
@@ -101,7 +104,7 @@ export async function createPatientApi(params: { accessToken: string; payload: P
       patient: AuthUser;
       loginFields: { caregiverPhone?: string; authPin: string };
     };
-  }>('/api/v1/auth/patients', {
+  }>('/api/v1/patients', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${params.accessToken}`,

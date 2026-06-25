@@ -51,7 +51,7 @@ export default function LoginScreen() {
       if (role === 'admin') {
         router.replace('/admin');
       } else if (role === 'caregiver') {
-        router.replace('/choose-role');
+        router.replace('/caregiver/dashboard');
       } else {
         router.replace('/');
       }

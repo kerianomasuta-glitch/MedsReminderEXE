@@ -246,8 +246,5 @@ export function getDefaultRouteByRole(role: AppRole, portal: AppPortal | null) {
   if (role === 'patient') {
     return '/';
   }
-  if (!portal) {
-    return '/choose-role';
-  }
-  return portal === 'patient' ? '/' : '/caregiver/dashboard';
+  return '/caregiver/dashboard';
 }
