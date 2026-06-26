@@ -48,3 +48,5 @@ android/.gradle/
 android/build/
 
 .env
+
+node_modules/
