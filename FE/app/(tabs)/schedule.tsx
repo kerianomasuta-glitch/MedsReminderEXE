@@ -85,7 +85,7 @@ export default function ScheduleScreen() {
   const [selectedSchedule, setSelectedSchedule] = useState<MedicationSchedule | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
-  
+
   const [isEditingDetail, setIsEditingDetail] = useState<boolean>(false);
   const [updateLoading, setUpdateLoading] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
@@ -188,7 +188,7 @@ export default function ScheduleScreen() {
     setEditStartDate(selectedSchedule.startDate ? selectedSchedule.startDate.substring(0, 10) : '');
     setEditEndDate(selectedSchedule.endDate ? selectedSchedule.endDate.substring(0, 10) : '');
     setEditFrequencyType(selectedSchedule.frequencyType || 'daily');
-    
+
     const slotsStr = selectedSchedule.timeSlots
       .map((slot) => `${slot.time}${slot.dosageNote ? ` - ${slot.dosageNote}` : ''}`)
       .join(', ');
@@ -385,7 +385,7 @@ export default function ScheduleScreen() {
                         {getFrequencyLabel(item.frequencyType, item.daysOfWeek, item.intervalDays)}
                       </Text>
                     </View>
-                    
+
                     {item.timeSlots.map((slot, idx) => (
                       <View key={idx} style={styles.medicationRow}>
                         <Ionicons name="time-outline" size={14} color={MedsTheme.colors.success} />

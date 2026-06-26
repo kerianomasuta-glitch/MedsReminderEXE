@@ -99,7 +99,7 @@ export default function NewMedicineScreen() {
   return (
     <AppScreen paddedBottom={44}>
       <PageHeader title="Thêm lịch uống thuốc" subtitle="Nhập đầy đủ thông tin để tạo lịch uống thuốc mới cho bệnh nhân." />
-      
+
       <View style={styles.formContainer}>
         <TextField
           label="Mã bệnh nhân (patientId)"
