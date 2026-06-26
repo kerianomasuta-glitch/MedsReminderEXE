@@ -5,9 +5,10 @@ import {
 } from '../error/error.js';
 
 class MedicationService {
-  constructor({ medicationRepository, userRepository }) {
+  constructor({ medicationRepository, userRepository, patientAccessService }) {
     this.medicationRepository = medicationRepository;
     this.userRepository = userRepository;
+    this.patientAccessService = patientAccessService;
   }
 
   async #assertPatientExists(patientId) {
@@ -21,8 +22,16 @@ class MedicationService {
     return patient;
   }
 
-  async createMedication({ patientId, createdBy, name, form, dosage, unit, usageNote, description }) {
+  async #assertAccess(actor, patientId) {
+    await this.patientAccessService.assertCanAccessPatient({
+      ...actor,
+      patientId,
+    });
+  }
+
+  async createMedication({ actor, patientId, createdBy, name, form, dosage, unit, usageNote, description }) {
     await this.#assertPatientExists(patientId);
+    await this.#assertAccess(actor, patientId);
 
     const existing = await this.medicationRepository.findByNameAndPatient({
       name: name.trim(),
@@ -44,11 +53,12 @@ class MedicationService {
     });
   }
 
-  async updateMedication({ id, data }) {
+  async updateMedication({ actor, id, data }) {
     const medication = await this.medicationRepository.findById(id);
     if (!medication) {
       throw new NotFoundError('Thuốc không tồn tại');
     }
+    await this.#assertAccess(actor, medication.patientId);
 
     if (data.name) {
       const existing = await this.medicationRepository.findByNameAndPatient({
@@ -64,25 +74,30 @@ class MedicationService {
     return this.medicationRepository.updateById(id, data);
   }
 
-  async getMedicationsByPatient({ patientId, limit, page }) {
+  async getMedicationsByPatient({ actor, patientId, limit, page }) {
     await this.#assertPatientExists(patientId);
+    await this.#assertAccess(actor, patientId);
     return this.medicationRepository.findByPatientId({ patientId, limit, page });
   }
 
-  async getMedicationById(id) {
+  async getMedicationById({ actor, id }) {
     const medication = await this.medicationRepository.findById(id);
     if (!medication) {
       throw new NotFoundError('Thuốc không tồn tại');
     }
+    await this.#assertAccess(actor, medication.patientId);
     return medication;
   }
 
-  async deleteMedication(id) {
-    const medication = await this.medicationRepository.softDelete(id);
+  async deleteMedication({ actor, id }) {
+    const medication = await this.medicationRepository.findById(id);
     if (!medication) {
       throw new NotFoundError('Thuốc không tồn tại');
     }
-    return medication;
+    await this.#assertAccess(actor, medication.patientId);
+
+    const deleted = await this.medicationRepository.softDelete(id);
+    return deleted;
   }
 }
 
