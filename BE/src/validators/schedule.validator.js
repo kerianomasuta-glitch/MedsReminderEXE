@@ -52,16 +52,31 @@ export const createScheduleSchema = Joi.object({
 });
 
 export const updateScheduleSchema = Joi.object({
+  patientId: Joi.string().trim().optional(),
+  prescriptionId: Joi.string().trim().optional(),
   startDate: Joi.date().iso().optional(),
   endDate: Joi.date().iso().optional(),
   frequencyType: Joi.string()
     .valid('daily', 'weekly', 'interval', 'as_needed')
     .optional(),
-  timeSlots: Joi.array().items(timeSlot).min(1).optional(),
+  timeSlots: Joi.array().items(timeSlot).min(1).optional().messages({
+    'array.min': 'Cần ít nhất 1 khung giờ uống thuốc',
+  }),
   daysOfWeek: Joi.array()
     .items(Joi.number().integer().min(0).max(6))
-    .optional(),
-  intervalDays: Joi.number().integer().min(1).optional(),
+    .optional()
+    .when('frequencyType', {
+      is: 'weekly',
+      then: Joi.required().messages({ 'any.required': 'daysOfWeek bắt buộc khi frequencyType = weekly' }),
+    }),
+  intervalDays: Joi.number()
+    .integer()
+    .min(1)
+    .optional()
+    .when('frequencyType', {
+      is: 'interval',
+      then: Joi.required().messages({ 'any.required': 'intervalDays bắt buộc khi frequencyType = interval' }),
+    }),
   reminderMinutesBefore: Joi.number().integer().min(0).max(60).optional(),
   timezone: Joi.string().trim().optional(),
   isActive: Joi.boolean().optional(),
