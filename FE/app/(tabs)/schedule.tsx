@@ -23,7 +23,7 @@ interface PrescriptionInfo {
   endDate?: string;
   doctorName?: string;
   note?: string;
-  medications?: string[];
+  medications?: any[];
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -515,6 +515,24 @@ export default function ScheduleScreen() {
                           {selectedSchedule.prescriptionId?.title || 'Chưa đặt tên'}
                         </Text>
                       </View>
+                      {selectedSchedule.prescriptionId?._id && (
+                        <View style={styles.detailRow}>
+                          <Ionicons name="key-outline" size={16} color={MedsTheme.colors.primary} />
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>prescriptionId: </Text>
+                            {selectedSchedule.prescriptionId._id}
+                          </Text>
+                        </View>
+                      )}
+                      {selectedSchedule.prescriptionId?.medications && selectedSchedule.prescriptionId.medications.length > 0 && (
+                        <View style={styles.detailRow}>
+                          <Ionicons name="medical-outline" size={16} color={MedsTheme.colors.primary} />
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>medications: </Text>
+                            {selectedSchedule.prescriptionId.medications.map((m: any) => m._id || m).join(', ')}
+                          </Text>
+                        </View>
+                      )}
                       {selectedSchedule.prescriptionId?.doctorName && (
                         <View style={styles.detailRow}>
                           <Ionicons name="person-outline" size={16} color={MedsTheme.colors.primary} />
@@ -537,6 +555,15 @@ export default function ScheduleScreen() {
 
                     <View style={styles.detailSection}>
                       <Text style={styles.sectionTitle}>Thông tin lịch uống</Text>
+                      {selectedSchedule.patientId && (
+                        <View style={styles.detailRow}>
+                          <Ionicons name="person-outline" size={16} color={MedsTheme.colors.primary} />
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>patientId: </Text>
+                            {selectedSchedule.patientId}
+                          </Text>
+                        </View>
+                      )}
                       <View style={styles.detailRow}>
                         <Ionicons name="repeat" size={16} color={MedsTheme.colors.primary} />
                         <Text style={styles.detailText}>
