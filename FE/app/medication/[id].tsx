@@ -21,6 +21,7 @@ interface Medication {
 
 interface Prescription {
   _id: string;
+  patientId?: any;
   title: string;
   doctorName?: string;
   startDate?: string;
@@ -545,6 +546,18 @@ export default function MedicationDetailScreen() {
 
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Thông tin chung</Text>
+              {prescription?._id && (
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldText}>Mã đơn thuốc (prescriptionId): </Text>
+                  {prescription._id}
+                </Text>
+              )}
+              {prescription?.patientId && (
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldText}>Mã bệnh nhân (patientId): </Text>
+                  {typeof prescription.patientId === 'object' ? prescription.patientId._id || JSON.stringify(prescription.patientId) : prescription.patientId}
+                </Text>
+              )}
               {prescription?.note && (
                 <Text style={styles.infoText}>
                   <Text style={styles.boldText}>Ghi chú: </Text>

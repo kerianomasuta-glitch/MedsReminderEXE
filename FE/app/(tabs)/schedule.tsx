@@ -23,7 +23,7 @@ interface PrescriptionInfo {
   endDate?: string;
   doctorName?: string;
   note?: string;
-  medications?: string[];
+  medications?: any[];
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -85,10 +85,12 @@ export default function ScheduleScreen() {
   const [selectedSchedule, setSelectedSchedule] = useState<MedicationSchedule | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
-  
+
   const [isEditingDetail, setIsEditingDetail] = useState<boolean>(false);
   const [updateLoading, setUpdateLoading] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
+  const [modalMedications, setModalMedications] = useState<any[]>([]);
+  const [modalMedsLoading, setModalMedsLoading] = useState<boolean>(false);
 
   // Form edit states
   const [editStartDate, setEditStartDate] = useState<string>('');
@@ -134,6 +136,7 @@ export default function ScheduleScreen() {
     if (!accessToken) return;
     try {
       setDetailLoading(true);
+      setModalMedications([]);
       const url = `http://localhost:3000/api/v1/schedules/${id}`;
       const response = await axios.get(url, {
         headers: {
@@ -141,8 +144,31 @@ export default function ScheduleScreen() {
         },
       });
       if (response.data && response.data.data) {
-        setSelectedSchedule(response.data.data);
+        const scheduleData = response.data.data;
+        setSelectedSchedule(scheduleData);
         setModalVisible(true);
+
+        // Fetch medications detail if present
+        const medIds = scheduleData.prescriptionId?.medications || [];
+        if (medIds.length > 0) {
+          setModalMedsLoading(true);
+          try {
+            const requests = medIds.map((medId: string) =>
+              axios.get(`http://localhost:3000/api/v1/medications/${medId}`, {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              })
+            );
+            const responses = await Promise.all(requests);
+            const medsData = responses.map((res) => res.data?.data).filter(Boolean);
+            setModalMedications(medsData);
+          } catch (mErr) {
+            console.error('Error fetching modal medications:', mErr);
+          } finally {
+            setModalMedsLoading(false);
+          }
+        }
       }
     } catch (err: any) {
       console.error('Error fetching schedule detail:', err);
@@ -162,7 +188,7 @@ export default function ScheduleScreen() {
     setEditStartDate(selectedSchedule.startDate ? selectedSchedule.startDate.substring(0, 10) : '');
     setEditEndDate(selectedSchedule.endDate ? selectedSchedule.endDate.substring(0, 10) : '');
     setEditFrequencyType(selectedSchedule.frequencyType || 'daily');
-    
+
     const slotsStr = selectedSchedule.timeSlots
       .map((slot) => `${slot.time}${slot.dosageNote ? ` - ${slot.dosageNote}` : ''}`)
       .join(', ');
@@ -359,7 +385,7 @@ export default function ScheduleScreen() {
                         {getFrequencyLabel(item.frequencyType, item.daysOfWeek, item.intervalDays)}
                       </Text>
                     </View>
-                    
+
                     {item.timeSlots.map((slot, idx) => (
                       <View key={idx} style={styles.medicationRow}>
                         <Ionicons name="time-outline" size={14} color={MedsTheme.colors.success} />
@@ -515,6 +541,44 @@ export default function ScheduleScreen() {
                           {selectedSchedule.prescriptionId?.title || 'Chưa đặt tên'}
                         </Text>
                       </View>
+                      {selectedSchedule.prescriptionId?._id && (
+                        <View style={styles.detailRow}>
+                          <Ionicons name="key-outline" size={16} color={MedsTheme.colors.primary} />
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>prescriptionId: </Text>
+                            {selectedSchedule.prescriptionId._id}
+                          </Text>
+                        </View>
+                      )}
+                      {modalMedsLoading ? (
+                        <View style={styles.detailRow}>
+                          <ActivityIndicator size="small" color={MedsTheme.colors.primary} style={{ marginRight: 6 }} />
+                          <Text style={styles.detailText}>Đang tải thông tin thuốc...</Text>
+                        </View>
+                      ) : modalMedications.length > 0 ? (
+                        <View style={{ marginTop: 6, paddingLeft: 24, gap: 8, marginBottom: 8 }}>
+                          <Text style={styles.detailLabel}>Danh sách thuốc:</Text>
+                          {modalMedications.map((med, index) => (
+                            <View key={med._id || index} style={styles.medDetailCard}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Ionicons name="medical" size={14} color={MedsTheme.colors.success} />
+                                <Text style={styles.medDetailName}>{index + 1}. {med.name}</Text>
+                              </View>
+                              <Text style={styles.medDetailText}>Dạng: {med.form || 'N/A'} • Liều lượng: {med.dosage || 'N/A'} • Đơn vị: {med.unit || 'N/A'}</Text>
+                              {med.usageNote && <Text style={styles.medDetailText}>Cách dùng: {med.usageNote}</Text>}
+                              {med.description && <Text style={styles.medDetailText}>Mô tả: {med.description}</Text>}
+                            </View>
+                          ))}
+                        </View>
+                      ) : selectedSchedule.prescriptionId?.medications && selectedSchedule.prescriptionId.medications.length > 0 ? (
+                        <View style={styles.detailRow}>
+                          <Ionicons name="medical-outline" size={16} color={MedsTheme.colors.primary} />
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>medications: </Text>
+                            {selectedSchedule.prescriptionId.medications.map((m: any) => m._id || m).join(', ')}
+                          </Text>
+                        </View>
+                      ) : null}
                       {selectedSchedule.prescriptionId?.doctorName && (
                         <View style={styles.detailRow}>
                           <Ionicons name="person-outline" size={16} color={MedsTheme.colors.primary} />
@@ -537,6 +601,15 @@ export default function ScheduleScreen() {
 
                     <View style={styles.detailSection}>
                       <Text style={styles.sectionTitle}>Thông tin lịch uống</Text>
+                      {selectedSchedule.patientId && (
+                        <View style={styles.detailRow}>
+                          <Ionicons name="person-outline" size={16} color={MedsTheme.colors.primary} />
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>patientId: </Text>
+                            {selectedSchedule.patientId}
+                          </Text>
+                        </View>
+                      )}
                       <View style={styles.detailRow}>
                         <Ionicons name="repeat" size={16} color={MedsTheme.colors.primary} />
                         <Text style={styles.detailText}>
@@ -998,5 +1071,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 999,
+  },
+  medDetailCard: {
+    backgroundColor: MedsTheme.colors.appBackground,
+    borderWidth: 1,
+    borderColor: MedsTheme.colors.border,
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 4,
+    gap: 4,
+  },
+  medDetailName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: MedsTheme.colors.textMain,
+  },
+  medDetailText: {
+    fontSize: 12,
+    color: MedsTheme.colors.textMuted,
   },
 });
