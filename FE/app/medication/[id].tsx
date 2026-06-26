@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator, TextInput, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 
@@ -45,7 +45,7 @@ export default function MedicationDetailScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [feedbackText, setFeedbackText] = useState<string | null>(null);
-  const { accessToken } = useAuth();
+  const { accessToken, logout } = useAuth();
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editTitle, setEditTitle] = useState<string>('');
@@ -95,23 +95,27 @@ export default function MedicationDetailScreen() {
 
   const handleUpdatePrescription = async () => {
     if (!accessToken) {
-      Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn.');
+      if (Platform.OS === 'web') {
+        window.alert('Phiên đăng nhập đã hết hạn.');
+      } else {
+        Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn.');
+      }
       return;
     }
     try {
       setActionLoading(true);
       const url = `http://localhost:3000/api/v1/prescriptions/${id}`;
-      const body = {
-        patientId: prescription?.patientId || '',
-        title: editTitle,
-        doctorName: editDoctorName,
-        startDate: editStartDate,
-        endDate: editEndDate,
-        prescribedAt: editPrescribedAt,
-        note: editNote,
-        isActive: editIsActive,
-        medications: prescription?.medications.map(m => m._id) || [],
-      };
+      const body: any = {};
+      if (editTitle && editTitle.trim()) body.title = editTitle.trim();
+      if (editDoctorName && editDoctorName.trim()) body.doctorName = editDoctorName.trim();
+      if (editStartDate && editStartDate.trim()) body.startDate = editStartDate.trim();
+      if (editEndDate && editEndDate.trim()) body.endDate = editEndDate.trim();
+      if (editPrescribedAt && editPrescribedAt.trim()) body.prescribedAt = editPrescribedAt.trim();
+      if (editNote !== undefined) body.note = editNote;
+      if (editIsActive !== undefined) body.isActive = editIsActive;
+      if (prescription?.medications) {
+        body.medications = prescription.medications.map(m => m._id);
+      }
 
       console.log('Sending PUT to update prescription:', body);
       const response = await axios.put(url, body, {
@@ -122,14 +126,29 @@ export default function MedicationDetailScreen() {
       });
 
       console.log('Update prescription response:', response.data);
-      if (response.data && response.data.data) {
-        setPrescription(response.data.data);
+      if (Platform.OS === 'web') {
+        window.alert('Cập nhật đơn thuốc thành công!');
+        router.replace('/prescriptions');
+      } else {
+        Alert.alert('Thành công', 'Cập nhật đơn thuốc thành công!', [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/prescriptions'),
+          },
+        ]);
       }
-      setIsEditing(false);
-      setFeedbackText('Cập nhật đơn thuốc thành công!');
     } catch (err: any) {
       console.error('Error updating prescription:', err);
-      Alert.alert('Lỗi', err?.response?.data?.message || err?.message || 'Không thể cập nhật đơn thuốc');
+      if (err?.response?.status === 401) {
+        logout();
+        return;
+      }
+      const errMsg = err?.response?.data?.message || err?.message || 'Không thể cập nhật đơn thuốc';
+      if (Platform.OS === 'web') {
+        window.alert('Lỗi: ' + errMsg);
+      } else {
+        Alert.alert('Lỗi', errMsg);
+      }
     } finally {
       setActionLoading(false);
     }
@@ -137,7 +156,11 @@ export default function MedicationDetailScreen() {
 
   const handleDeletePrescription = async () => {
     if (!accessToken) {
-      Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn.');
+      if (Platform.OS === 'web') {
+        window.alert('Phiên đăng nhập đã hết hạn.');
+      } else {
+        Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn.');
+      }
       return;
     }
 
@@ -152,28 +175,45 @@ export default function MedicationDetailScreen() {
           },
         });
         console.log('Delete prescription response:', response.data);
-        Alert.alert('Thành công', 'Đã xóa đơn thuốc.', [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/schedule'),
-          },
-        ]);
+        if (Platform.OS === 'web') {
+          window.alert('Đã xóa đơn thuốc.');
+          router.replace('/prescriptions');
+        } else {
+          Alert.alert('Thành công', 'Đã xóa đơn thuốc.', [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/prescriptions'),
+            },
+          ]);
+        }
       } catch (err: any) {
         console.error('Error deleting prescription:', err);
-        Alert.alert('Lỗi', err?.response?.data?.message || err?.message || 'Không thể xóa đơn thuốc');
+        const errMsg = err?.response?.data?.message || err?.message || 'Không thể xóa đơn thuốc';
+        if (Platform.OS === 'web') {
+          window.alert('Lỗi: ' + errMsg);
+        } else {
+          Alert.alert('Lỗi', errMsg);
+        }
       } finally {
         setActionLoading(false);
       }
     };
 
-    Alert.alert(
-      'Xác nhận xóa',
-      'Bạn có chắc chắn muốn xóa đơn thuốc này không?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Xóa', style: 'destructive', onPress: performDelete },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const confirmDelete = window.confirm('Bạn có chắc chắn muốn xóa đơn thuốc này không?');
+      if (confirmDelete) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        'Xác nhận xóa',
+        'Bạn có chắc chắn muốn xóa đơn thuốc này không?',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { text: 'Xóa', style: 'destructive', onPress: performDelete },
+        ]
+      );
+    }
   };
 
   useEffect(() => {
@@ -385,31 +425,7 @@ export default function MedicationDetailScreen() {
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Trạng thái đơn thuốc</Text>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Pressable
-                  style={[
-                    styles.cancelButton,
-                    editIsActive && { backgroundColor: MedsTheme.colors.success },
-                  ]}
-                  onPress={() => setEditIsActive(true)}>
-                  <Text style={[styles.cancelBtnText, editIsActive && { color: '#FFFFFF' }]}>
-                    Hoạt động
-                  </Text>
-                </Pressable>
-                <Pressable
-                  style={[
-                    styles.cancelButton,
-                    !editIsActive && { backgroundColor: MedsTheme.colors.danger },
-                  ]}
-                  onPress={() => setEditIsActive(false)}>
-                  <Text style={[styles.cancelBtnText, !editIsActive && { color: '#FFFFFF' }]}>
-                    Tạm dừng
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
+
 
             <View style={styles.actionRow}>
               <Pressable
@@ -476,7 +492,7 @@ export default function MedicationDetailScreen() {
                       <Ionicons name="medical" size={18} color={MedsTheme.colors.success} />
                       <Text style={styles.medNameText}>{index + 1}. {med.name}</Text>
                     </View>
-                    
+
                     <View style={styles.medMeta}>
                       <Text style={styles.metaLabel}>Liều lượng: <Text style={styles.metaValue}>{med.dosage}</Text></Text>
                       {med.form && <Text style={styles.metaLabel}>Dạng thuốc: <Text style={styles.metaValue}>{med.form}</Text></Text>}
@@ -802,7 +818,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     color: MedsTheme.colors.textMain,
   },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
   editButton: {
+    flex: 1,
     height: 50,
     borderRadius: 12,
     backgroundColor: MedsTheme.colors.primary,

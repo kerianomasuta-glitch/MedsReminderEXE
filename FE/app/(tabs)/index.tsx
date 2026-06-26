@@ -69,7 +69,7 @@ export default function HomeScreen() {
           return pres.medications.map((med: ApiMedication, medIndex: number) => {
             const hours = ['08:00 AM', '01:00 PM', '06:00 PM', '09:00 PM'];
             const statusOptions: MedicationStatus[] = ['taken', 'upcoming', 'missed', 'late'];
-            
+
             return {
               id: `${pres._id}-${med._id}-${index}-${medIndex}`,
               name: med.name,
@@ -190,7 +190,7 @@ export default function HomeScreen() {
               <Pressable
                 style={styles.doneButton}
                 onPress={() => {
-                  setDisplaySchedules(prev => 
+                  setDisplaySchedules(prev =>
                     prev.map((item) => item.id === upcoming.id ? { ...item, status: 'taken' as const } : item)
                   );
                 }}>
@@ -518,6 +518,11 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: 'rgba(31, 128, 240, 0.1)',
     borderRadius: 10,
+  },
+  loadingText: {
+    color: MedsTheme.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '500',
   },
   errorBanner: {
     paddingVertical: 10,

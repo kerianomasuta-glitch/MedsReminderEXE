@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
+import { Pressable, StyleSheet, Text, View, ActivityIndicator, Alert, Platform } from 'react-native';
 import axios from 'axios';
 
 import { AppScreen, PageHeader, TextField } from '@/components/meds/ui-kit';
@@ -59,12 +59,25 @@ export default function NewMedicineScreen() {
       });
 
       console.log('Create schedule response:', response.data);
-      Alert.alert('Thành công', 'Lưu lịch uống thuốc mới thành công!');
-      router.replace('/schedule');
+      if (Platform.OS === 'web') {
+        window.alert('Lưu lịch uống thuốc mới thành công!');
+        router.replace('/prescriptions');
+      } else {
+        Alert.alert('Thành công', 'Lưu lịch uống thuốc mới thành công!', [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/prescriptions'),
+          },
+        ]);
+      }
     } catch (err: any) {
       console.error('Error saving schedule:', err);
       const errMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi lưu lịch thuốc';
-      Alert.alert('Thất bại', errMsg);
+      if (Platform.OS === 'web') {
+        window.alert('Thất bại: ' + errMsg);
+      } else {
+        Alert.alert('Thất bại', errMsg);
+      }
     } finally {
       setLoading(false);
     }
