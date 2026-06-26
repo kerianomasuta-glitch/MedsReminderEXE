@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import axios from 'axios';
 
 import { loginApi, loginPatientApi, logoutApi, refreshApi, registerApi, type AuthUser } from '@/services/auth-api';
 
@@ -122,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!storedRefreshToken || !storedDeviceId) {
       await applyGuestState();
-      return;
+      return null;
     }
 
     try {
@@ -153,13 +154,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         portal: nextPortal,
         user: nextUser,
       });
+      return response.data.accessToken;
     } catch {
       await applyGuestState();
+      return null;
     }
   }, [applyGuestState]);
 
   useEffect(() => {
     void refreshSession();
+  }, [refreshSession]);
+
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          const newAccessToken = await refreshSession();
+          if (newAccessToken) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            return axios(originalRequest);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
   }, [refreshSession]);
 
   const login = useCallback(async (input: LoginInput) => {
