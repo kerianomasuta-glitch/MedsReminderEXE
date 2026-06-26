@@ -65,8 +65,31 @@ class ScheduleService {
     if (!schedule) {
       throw new NotFoundError('Lịch uống thuốc không tồn tại');
     }
-    await this.#assertAccess(actor, schedule.patientId);
-    return this.scheduleRepository.updateById(id, data);
+
+    const patientId = data.patientId ?? schedule.patientId;
+    const prescriptionId = data.prescriptionId ?? schedule.prescriptionId;
+    const startDate = data.startDate ?? schedule.startDate;
+    const endDate = data.endDate ?? schedule.endDate;
+
+    await this.#assertAccess(actor, patientId);
+
+    if (data.patientId) {
+      await this.#assertPatientExists(patientId);
+    }
+
+    if (data.patientId || data.prescriptionId) {
+      await this.#assertPrescriptionBelongsToPatient(prescriptionId, patientId);
+    }
+
+    if (endDate && startDate && new Date(endDate) < new Date(startDate)) {
+      throw new BadRequestError('Ngày kết thúc phải sau ngày bắt đầu');
+    }
+
+    const updateData = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    );
+
+    return this.scheduleRepository.updateById(id, updateData);
   }
 
   async getSchedulesByPatient({ actor, patientId, limit, page }) {
