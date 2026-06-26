@@ -100,7 +100,6 @@ router.post(
 router.get(
   '/patient/:patientId',
   authentication,
-  authorizationByRole(['caregiver', 'admin']),
   async (req, res, next) => {
     const controller = req.container.resolve('medicationLogController');
     await controller.getLogsByPatient(req, res, next);
@@ -138,7 +137,6 @@ router.get(
 router.get(
   '/schedule/:scheduleId',
   authentication,
-  authorizationByRole(['caregiver', 'admin']),
   async (req, res, next) => {
     const controller = req.container.resolve('medicationLogController');
     await controller.getLogsBySchedule(req, res, next);
