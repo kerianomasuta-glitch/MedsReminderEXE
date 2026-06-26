@@ -86,7 +86,6 @@ const router = express.Router();
 router.post(
   '/',
   authentication,
-  authorizationByRole(['caregiver', 'admin']),
   validateData(createScheduleSchema),
   async (req, res, next) => {
     const controller = req.container.resolve('scheduleController');
@@ -125,7 +124,6 @@ router.post(
 router.get(
   '/patient/:patientId',
   authentication,
-  authorizationByRole(['caregiver', 'admin']),
   async (req, res, next) => {
     const controller = req.container.resolve('scheduleController');
     await controller.getSchedulesByPatient(req, res, next);
@@ -221,7 +219,6 @@ router.get(
 router.put(
   '/:id',
   authentication,
-  authorizationByRole(['caregiver', 'admin']),
   validateData(updateScheduleSchema),
   async (req, res, next) => {
     const controller = req.container.resolve('scheduleController');
@@ -252,7 +249,6 @@ router.put(
 router.delete(
   '/:id',
   authentication,
-  authorizationByRole(['caregiver', 'admin']),
   async (req, res, next) => {
     const controller = req.container.resolve('scheduleController');
     await controller.deleteSchedule(req, res, next);
