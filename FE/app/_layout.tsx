@@ -63,7 +63,7 @@ function RootLayoutContent() {
           name="caregiver/dashboard"
           options={{ title: 'Dashboard người thân', headerShadowVisible: false }}
         />
-        <Stack.Screen name="appointments" options={{ title: 'Lịch tái khám', headerShadowVisible: false }} />
+        <Stack.Screen name="appointments/index" options={{ title: 'Lịch tái khám', headerShadowVisible: false }} />
         <Stack.Screen name="appointments/new" options={{ title: 'Thêm lịch khám', headerShadowVisible: false }} />
         <Stack.Screen name="appointments/[id]/edit" options={{ title: 'Sửa lịch khám', headerShadowVisible: false }} />
         <Stack.Screen name="reports" options={{ title: 'Báo cáo tuân thủ', headerShadowVisible: false }} />

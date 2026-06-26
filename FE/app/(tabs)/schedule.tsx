@@ -1,43 +1,141 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import axios from 'axios';
 
 import { MedsTheme } from '@/constants/meds-theme';
-import { useMedicationSchedules } from '@/store/medication-schedule-store';
+import { useAuth } from '@/store/auth-store';
+
+interface Medication {
+  _id: string;
+  name: string;
+  dosage: string;
+  form?: string;
+  unit?: string;
+}
+
+interface Prescription {
+  _id: string;
+  title: string;
+  doctorName?: string;
+  startDate?: string;
+  endDate?: string;
+  note?: string;
+  medications: Medication[];
+}
 
 export default function ScheduleScreen() {
-  const schedules = useMedicationSchedules();
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { accessToken, role } = useAuth();
+
+  const fetchPrescriptions = useCallback(async () => {
+    if (!accessToken) {
+      setPrescriptions([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const url = 'http://localhost:3000/api/v1/prescriptions/patient/6a3cef8fd789d8d7be4b7e47?page=1&limit=20';
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.data && response.data.data && response.data.data.prescriptions) {
+        setPrescriptions(response.data.data.prescriptions);
+      } else {
+        setPrescriptions([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching prescriptions:', err);
+      setError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi tải đơn thuốc');
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken, role]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPrescriptions();
+    }, [fetchPrescriptions])
+  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Lịch uống thuốc</Text>
-        <Text style={styles.subtitle}>Theo dõi lịch uống theo khung giờ trong ngày.</Text>
+        <Text style={styles.subtitle}>Theo dõi danh sách đơn thuốc và lịch uống thuốc của bệnh nhân.</Text>
 
-        <View style={styles.timeline}>
-          {schedules.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.timelineRow}
-              onPress={() => router.push({ pathname: '/medication/[id]', params: { id: item.id } })}>
-              <View style={styles.timeBlock}>
-                <Text style={styles.timeText}>{item.time}</Text>
-              </View>
-
-              <View style={styles.card}>
-                <View style={styles.iconWrap}>
-                  <Ionicons name="medical" size={16} color={MedsTheme.colors.primaryDark} />
-                </View>
-                <View style={styles.cardInfo}>
-                  <Text style={styles.cardTitle}>{item.name}</Text>
-                  <Text style={styles.cardDose}>{item.dose}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={17} color={MedsTheme.colors.textMuted} />
-              </View>
+        {loading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={MedsTheme.colors.primary} />
+            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={48} color={MedsTheme.colors.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryButton} onPress={fetchPrescriptions}>
+              <Text style={styles.retryButtonText}>Thử lại</Text>
             </Pressable>
-          ))}
-        </View>
+          </View>
+        ) : prescriptions.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="document-text-outline" size={48} color={MedsTheme.colors.textMuted} />
+            <Text style={styles.emptyText}>Bệnh nhân này chưa có đơn thuốc nào.</Text>
+          </View>
+        ) : (
+          <View style={styles.timeline}>
+            {prescriptions.map((item) => (
+              <Pressable key={item._id} onPress={() => router.push(`/medication/${item._id}`)}>
+                <View style={styles.prescriptionCard}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.titleContainer}>
+                      <Ionicons name="document-text" size={20} color={MedsTheme.colors.primaryDark} />
+                      <Text style={styles.cardTitle}>{item.title}</Text>
+                    </View>
+                    {item.doctorName && (
+                      <Text style={styles.doctorText}>BS: {item.doctorName}</Text>
+                    )}
+                  </View>
+
+                  {item.note && (
+                    <Text style={styles.noteText}>Ghi chú: {item.note}</Text>
+                  )}
+
+                  <View style={styles.medicationsList}>
+                    <Text style={styles.medicationSectionTitle}>Danh sách thuốc:</Text>
+                    {item.medications.map((med) => (
+                      <View key={med._id} style={styles.medicationRow}>
+                        <Ionicons name="medical" size={14} color={MedsTheme.colors.success} />
+                        <Text style={styles.medicationName}>
+                          {med.name} - <Text style={styles.medicationDose}>{med.dosage}</Text>
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {(item.startDate || item.endDate) && (
+                    <View style={styles.dateContainer}>
+                      <Ionicons name="calendar-outline" size={14} color={MedsTheme.colors.textMuted} />
+                      <Text style={styles.dateText}>
+                        Thời gian: {item.startDate ? new Date(item.startDate).toLocaleDateString('vi-VN') : 'N/A'} - {item.endDate ? new Date(item.endDate).toLocaleDateString('vi-VN') : 'N/A'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         <Pressable style={styles.primaryButton} onPress={() => router.push('/medicines/new')}>
           <Ionicons name="add-circle" size={18} color="#FFFFFF" />
@@ -70,60 +168,121 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   timeline: {
-    gap: 10,
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
   },
-  timeBlock: {
-    width: 88,
-    alignSelf: 'stretch',
-    justifyContent: 'center',
+  centerContainer: {
+    paddingVertical: 40,
     alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: '#E9F2FF',
-    borderWidth: 1,
-    borderColor: '#D3E4FA',
+    justifyContent: 'center',
   },
-  timeText: {
-    color: MedsTheme.colors.primaryDark,
-    fontWeight: '700',
-    fontSize: 14,
+  loadingText: {
+    marginTop: 10,
+    color: MedsTheme.colors.textMuted,
+    fontSize: 15,
   },
-  card: {
-    flex: 1,
+  errorContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  errorText: {
+    color: MedsTheme.colors.danger,
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: MedsTheme.colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  emptyText: {
+    color: MedsTheme.colors.textMuted,
+    fontSize: 16,
+  },
+  prescriptionCard: {
     backgroundColor: MedsTheme.colors.card,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: MedsTheme.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    padding: 16,
+    shadowColor: MedsTheme.colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: MedsTheme.colors.border,
+    paddingBottom: 8,
+    marginBottom: 8,
+  },
+  titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  iconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#EAF2FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardInfo: {
-    flex: 1,
+    gap: 6,
   },
   cardTitle: {
     color: MedsTheme.colors.textMain,
     fontWeight: '700',
     fontSize: 16,
   },
-  cardDose: {
-    marginTop: 2,
-    color: MedsTheme.colors.textMuted,
+  doctorText: {
     fontSize: 13,
+    color: MedsTheme.colors.textMuted,
+    fontStyle: 'italic',
+  },
+  noteText: {
+    fontSize: 14,
+    color: MedsTheme.colors.warning,
+    marginBottom: 10,
+  },
+  medicationsList: {
+    gap: 6,
+    marginBottom: 10,
+  },
+  medicationSectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: MedsTheme.colors.textMain,
+    marginBottom: 4,
+  },
+  medicationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  medicationName: {
+    fontSize: 14,
+    color: MedsTheme.colors.textMain,
+    fontWeight: '500',
+  },
+  medicationDose: {
+    color: MedsTheme.colors.textMuted,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dateText: {
+    fontSize: 12,
+    color: MedsTheme.colors.textMuted,
   },
   primaryButton: {
     marginTop: 26,

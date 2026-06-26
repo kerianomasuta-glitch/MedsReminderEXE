@@ -1,14 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useState, useEffect, useCallback } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import axios from "axios";
 
-import { MedicationStatus } from "@/constants/meds-data";
+import { MedicationStatus, MedicationItem } from "@/constants/meds-data";
 import { MedsTheme } from "@/constants/meds-theme";
 import { updateMedicationScheduleStatus, useMedicationSchedules } from "@/store/medication-schedule-store";
+import { useAuth } from "@/store/auth-store";
 
 const statusLabel: Record<MedicationStatus, string> = {
   taken: "Đã uống",
@@ -17,10 +20,88 @@ const statusLabel: Record<MedicationStatus, string> = {
   missed: "Bỏ qua",
 };
 
+interface ApiMedication {
+  _id: string;
+  name: string;
+  dosage: string;
+  form?: string;
+  unit?: string;
+}
+
+interface ApiPrescription {
+  _id: string;
+  title: string;
+  doctorName?: string;
+  startDate?: string;
+  endDate?: string;
+  note?: string;
+  medications: ApiMedication[];
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const schedules = useMedicationSchedules();
-  const upcoming = schedules.find((item) => item.status === "upcoming") ?? schedules[0];
+  const fallbackSchedules = useMedicationSchedules();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [displaySchedules, setDisplaySchedules] = useState<MedicationItem[]>([]);
+  const { accessToken, role } = useAuth();
+
+  const fetchPrescriptionsAndMap = useCallback(async () => {
+    if (!accessToken) {
+      setDisplaySchedules(fallbackSchedules);
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const url = 'http://localhost:3000/api/v1/prescriptions/patient/6a3cef8fd789d8d7be4b7e47?page=1&limit=20';
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.data && response.data.data && response.data.data.prescriptions && response.data.data.prescriptions.length > 0) {
+        // Map the api prescriptions data to MedicationItem format
+        const mappedList: MedicationItem[] = response.data.data.prescriptions.flatMap((pres: ApiPrescription, index: number) => {
+          return pres.medications.map((med: ApiMedication, medIndex: number) => {
+            const hours = ['08:00 AM', '01:00 PM', '06:00 PM', '09:00 PM'];
+            const statusOptions: MedicationStatus[] = ['taken', 'upcoming', 'missed', 'late'];
+            
+            return {
+              id: `${pres._id}-${med._id}-${index}-${medIndex}`,
+              name: med.name,
+              dose: `${med.dosage}${med.form ? ` - dạng ${med.form}` : ''}`,
+              time: hours[(index + medIndex) % hours.length],
+              icon: med.form === 'syrup' || med.form === 'suspension' ? 'water' as const : 'medical' as const,
+              status: statusOptions[(index + medIndex) % statusOptions.length],
+              note: pres.note || pres.title,
+            };
+          });
+        });
+
+        setDisplaySchedules(mappedList);
+      } else {
+        setDisplaySchedules(fallbackSchedules);
+      }
+    } catch (err: any) {
+      console.error('Error fetching prescriptions in Home:', err);
+      setError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi tải đơn thuốc');
+      setDisplaySchedules(fallbackSchedules);
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken, role, fallbackSchedules]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPrescriptionsAndMap();
+    }, [fetchPrescriptionsAndMap])
+  );
+
+  const upcoming = displaySchedules.find((item) => item.status === "upcoming") ?? displaySchedules[0];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -64,8 +145,20 @@ export default function HomeScreen() {
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Lịch thuốc hôm nay</Text>
-            <Text style={styles.sectionDate}>Thứ Tư, 24 Tháng 5</Text>
+            <Text style={styles.sectionDate}>Thứ Sáu, 26 Tháng 6</Text>
           </View>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={MedsTheme.colors.primary} />
+              <Text style={styles.loadingText}>Đang cập nhật lịch uống thuốc...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorBanner}>
+              <Ionicons name="warning" size={16} color={MedsTheme.colors.danger} />
+              <Text style={styles.errorText}>Dữ liệu ngoại tuyến. Có lỗi khi đồng bộ.</Text>
+            </View>
+          ) : null}
 
           <Text style={styles.groupLabel}>SẮP TỚI</Text>
           <View style={styles.upcomingCard}>
@@ -76,10 +169,11 @@ export default function HomeScreen() {
                 </Text>
                 <View style={styles.upcomingBadge}>
                   <Text style={styles.upcomingBadgeText}>
-                    {upcoming ? "Trong 30 phút" : "Chưa có lịch"}
+                    {upcoming ? "Được nhắc nhở" : "Chưa có lịch"}
                   </Text>
                 </View>
               </View>
+
               <View style={styles.pillIconWrap}>
                 <Ionicons
                   name="medical"
@@ -92,15 +186,17 @@ export default function HomeScreen() {
             <Text style={styles.upcomingName}>{upcoming?.name ?? "Chưa có thuốc"}</Text>
             <Text style={styles.upcomingDose}>{upcoming?.dose ?? "Hãy thêm lịch uống thuốc mới"}</Text>
 
-            <Pressable
-              style={styles.doneButton}
-              onPress={() => {
-                if (upcoming) {
-                  updateMedicationScheduleStatus(upcoming.id, "taken");
-                }
-              }}>
-              <Text style={styles.doneButtonText}>Đã uống</Text>
-            </Pressable>
+            {upcoming && (
+              <Pressable
+                style={styles.doneButton}
+                onPress={() => {
+                  setDisplaySchedules(prev => 
+                    prev.map((item) => item.id === upcoming.id ? { ...item, status: 'taken' as const } : item)
+                  );
+                }}>
+                <Text style={styles.doneButtonText}>Đã uống</Text>
+              </Pressable>
+            )}
           </View>
 
           <View style={styles.dayHeader}>
@@ -110,7 +206,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {schedules.map((item) => (
+          {displaySchedules.map((item) => (
             <Pressable
               key={item.id}
               onPress={() =>
@@ -128,11 +224,9 @@ export default function HomeScreen() {
                 <View style={styles.medicationIcon}>
                   <Ionicons
                     name={
-                      item.icon === "medical"
-                        ? "medkit"
-                        : item.icon === "water"
-                          ? "water"
-                          : "medical"
+                      item.icon === "water"
+                        ? "water"
+                        : "medkit"
                     }
                     size={15}
                     color={MedsTheme.colors.primaryDark}
@@ -415,5 +509,31 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     shadowRadius: 10,
     elevation: 8,
+  },
+  loadingContainer: {
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(31, 128, 240, 0.1)',
+    borderRadius: 10,
+  },
+  errorBanner: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FDEBEC',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F7BCC0',
+  },
+  errorText: {
+    color: '#C63535',
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
   },
 });
