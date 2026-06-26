@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+FE/node_modules/
+BE/node_modules/
+
+# Expo / build / Metro
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+
+# debug / logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
+*.tsbuildinfo
+
+# local env files
+.env
+.env*.local
+
+# generated native folders
+ios/
+android/
+FE/ios/
+FE/android/
+BE/ios/
+BE/android/
