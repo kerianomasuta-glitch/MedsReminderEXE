@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import axios from 'axios';
 
 import { loginApi, loginPatientApi, logoutApi, refreshApi, registerApi, type AuthUser } from '@/services/auth-api';
 
@@ -19,15 +20,15 @@ type AuthState = {
 
 type LoginInput =
   | {
-      mode: 'caregiver';
-      username: string;
-      password: string;
-    }
+    mode: 'caregiver';
+    username: string;
+    password: string;
+  }
   | {
-      mode: 'patient';
-      caregiverPhone: string;
-      authPin: string;
-    };
+    mode: 'patient';
+    caregiverPhone: string;
+    authPin: string;
+  };
 
 type RegisterInput = {
   name: string;
@@ -40,7 +41,7 @@ type AuthContextValue = AuthState & {
   login: (input: LoginInput) => Promise<{ role: AppRole }>;
   register: (input: RegisterInput) => Promise<void>;
   setPortal: (portal: AppPortal) => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<string | null | void>;
   logout: () => Promise<void>;
 };
 
@@ -122,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!storedRefreshToken || !storedDeviceId) {
       await applyGuestState();
-      return;
+      return null;
     }
 
     try {
@@ -153,8 +154,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         portal: nextPortal,
         user: nextUser,
       });
+      return response.data.accessToken;
     } catch {
       await applyGuestState();
+      return null;
     }
   }, [applyGuestState]);
 
@@ -162,17 +165,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshSession();
   }, [refreshSession]);
 
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          const newAccessToken = await refreshSession();
+          if (newAccessToken) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            return axios(originalRequest);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [refreshSession]);
+
   const login = useCallback(async (input: LoginInput) => {
     const response =
       input.mode === 'caregiver'
         ? await loginApi({
-            username: input.username,
-            password: input.password,
-          })
+          username: input.username,
+          password: input.password,
+        })
         : await loginPatientApi({
-            caregiverPhone: input.caregiverPhone,
-            authPin: input.authPin,
-          });
+          caregiverPhone: input.caregiverPhone,
+          authPin: input.authPin,
+        });
     const role = getRoleFromUser(response.data.user);
     const portal = role === 'patient' ? 'patient' : null;
 
@@ -209,10 +234,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       if (state.accessToken && state.deviceId) {
-        await logoutApi({
-          accessToken: state.accessToken,
-          deviceId: state.deviceId,
-        });
+        try {
+          await logoutApi({
+            accessToken: state.accessToken,
+            deviceId: state.deviceId,
+          });
+        } catch {
+          // Token may already be expired or invalid; still clear local session.
+        }
       }
     } finally {
       await applyGuestState();

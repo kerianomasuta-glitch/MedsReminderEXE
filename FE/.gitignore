@@ -41,3 +41,12 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Android build/cache files
+.gradle/
+android/.gradle/
+android/build/
+
+.env
+
+node_modules/

@@ -36,6 +36,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="prescriptions"
+        options={{
+          title: 'Đơn thuốc',
+          tabBarIcon: ({ color, size }) => <Ionicons size={size} name="document-text" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: 'History',
