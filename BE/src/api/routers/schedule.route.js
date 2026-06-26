@@ -180,6 +180,10 @@ router.get(
  *           schema:
  *             type: object
  *             properties:
+ *               patientId:
+ *                 type: string
+ *               prescriptionId:
+ *                 type: string
  *               startDate:
  *                 type: string
  *                 format: date

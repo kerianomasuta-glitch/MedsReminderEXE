@@ -37,11 +37,35 @@ class ScheduleController {
   updateSchedule = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { startDate, endDate, frequencyType, timeSlots, daysOfWeek, intervalDays, reminderMinutesBefore, timezone, isActive } = req.body;
+      const {
+        patientId,
+        prescriptionId,
+        startDate,
+        endDate,
+        frequencyType,
+        timeSlots,
+        daysOfWeek,
+        intervalDays,
+        reminderMinutesBefore,
+        timezone,
+        isActive,
+      } = req.body;
       const schedule = await this.scheduleService.updateSchedule({
         actor: this.#actor(req),
         id,
-        data: { startDate, endDate, frequencyType, timeSlots, daysOfWeek, intervalDays, reminderMinutesBefore, timezone, isActive },
+        data: {
+          patientId,
+          prescriptionId,
+          startDate,
+          endDate,
+          frequencyType,
+          timeSlots,
+          daysOfWeek,
+          intervalDays,
+          reminderMinutesBefore,
+          timezone,
+          isActive,
+        },
       });
       res.json({
         status: 'success',
