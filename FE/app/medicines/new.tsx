@@ -9,19 +9,18 @@ import { useAuth } from '@/store/auth-store';
 
 export default function NewMedicineScreen() {
   const [patientId, setPatientId] = useState('6a3cef8fd789d8d7be4b7e47');
-  const [title, setTitle] = useState('Đơn huyết áp cao');
-  const [medicationsStr, setMedicationsStr] = useState(
-    '6a3d4baf1ba1cfe8472e0709, 6a3d4c1b1ba1cfe8472e070b'
-  );
+  const [prescriptionId, setPrescriptionId] = useState('6a3ddb07c2a4e34da0d6e9cc');
   const [startDate, setStartDate] = useState('2026-06-25');
   const [endDate, setEndDate] = useState('2026-07-25');
-  const [prescribedAt, setPrescribedAt] = useState('2026-06-25');
-  const [doctorName, setDoctorName] = useState('BS. Nguyễn Văn A');
-  const [note, setNote] = useState('Uống sau ăn 30 phút');
+  const [frequencyType, setFrequencyType] = useState('daily');
+  const [timeSlotsStr, setTimeSlotsStr] = useState('08:00 - Uống sau ăn');
+  const [daysOfWeekStr, setDaysOfWeekStr] = useState('3');
+  const [intervalDays, setIntervalDays] = useState('1');
+  const [reminderMinutesBefore, setReminderMinutesBefore] = useState('5');
+  const [timezone, setTimezone] = useState('Asia/Ho_Chi_Minh');
 
   const [loading, setLoading] = useState(false);
-
-  const { accessToken, role } = useAuth();
+  const { accessToken } = useAuth();
 
   const handleSubmit = async () => {
     if (!accessToken) {
@@ -30,26 +29,40 @@ export default function NewMedicineScreen() {
     }
     setLoading(true);
     try {
-      const url = 'http://localhost:3000/api/v1/prescriptions';
+      const url = 'http://localhost:3000/api/v1/schedules';
 
-      // Parse comma-separated list of medications
-      const medications = medicationsStr
+      // Parse comma-separated list of timeSlots, e.g. "08:00 - Uống sau ăn, 20:00 - Trước đi ngủ"
+      const timeSlots = timeSlotsStr
         .split(',')
-        .map((id) => id.trim())
-        .filter(Boolean);
+        .map((s) => {
+          const parts = s.trim().split('-');
+          return {
+            time: parts[0]?.trim() || '08:00',
+            dosageNote: parts[1]?.trim() || '',
+          };
+        })
+        .filter((slot) => slot.time);
+
+      // Parse comma-separated list of daysOfWeek, e.g. "1, 3, 5"
+      const daysOfWeek = daysOfWeekStr
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((val) => !isNaN(val) && val >= 0 && val <= 6);
 
       const body = {
         patientId,
-        title,
-        medications,
+        prescriptionId,
         startDate,
-        endDate,
-        prescribedAt,
-        doctorName,
-        note,
+        endDate: endDate || undefined,
+        frequencyType,
+        timeSlots,
+        daysOfWeek: daysOfWeek.length > 0 ? daysOfWeek : undefined,
+        intervalDays: parseInt(intervalDays, 10) || undefined,
+        reminderMinutesBefore: parseInt(reminderMinutesBefore, 10) || 5,
+        timezone,
       };
 
-      console.log('Sending PUT to create schedule:', body);
+      console.log('Sending POST to create schedule:', body);
 
       const response = await axios.post(url, body, {
         headers: {
@@ -61,12 +74,12 @@ export default function NewMedicineScreen() {
       console.log('Create schedule response:', response.data);
       if (Platform.OS === 'web') {
         window.alert('Lưu lịch uống thuốc mới thành công!');
-        router.replace('/prescriptions');
+        router.replace('/schedule');
       } else {
         Alert.alert('Thành công', 'Lưu lịch uống thuốc mới thành công!', [
           {
             text: 'OK',
-            onPress: () => router.replace('/prescriptions'),
+            onPress: () => router.replace('/schedule'),
           },
         ]);
       }
@@ -96,18 +109,10 @@ export default function NewMedicineScreen() {
         />
 
         <TextField
-          label="Tiêu đề đơn thuốc (title)"
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Tiêu đề"
-        />
-
-        <TextField
-          label="Danh sách ID thuốc (medications - cách nhau bằng dấu phẩy)"
-          value={medicationsStr}
-          onChangeText={setMedicationsStr}
-          placeholder="ID thuốc 1, ID thuốc 2"
-          multiline
+          label="Mã đơn thuốc (prescriptionId)"
+          value={prescriptionId}
+          onChangeText={setPrescriptionId}
+          placeholder="Mã đơn thuốc"
         />
 
         <View style={styles.row}>
@@ -132,27 +137,54 @@ export default function NewMedicineScreen() {
         <View style={styles.row}>
           <View style={styles.col}>
             <TextField
-              label="Ngày kê đơn (prescribedAt)"
-              value={prescribedAt}
-              onChangeText={setPrescribedAt}
-              placeholder="YYYY-MM-DD"
+              label="Tần suất (frequencyType)"
+              value={frequencyType}
+              onChangeText={setFrequencyType}
+              placeholder="daily, weekly, interval, as_needed"
             />
           </View>
           <View style={styles.col}>
             <TextField
-              label="Bác sĩ kê đơn (doctorName)"
-              value={doctorName}
-              onChangeText={setDoctorName}
-              placeholder="Tên bác sĩ"
+              label="Số phút nhắc trước"
+              value={reminderMinutesBefore}
+              onChangeText={setReminderMinutesBefore}
+              placeholder="5"
             />
           </View>
         </View>
 
         <TextField
-          label="Ghi chú uống thuốc (note)"
-          value={note}
-          onChangeText={setNote}
-          placeholder="Ví dụ: Uống sau ăn 30 phút"
+          label="Khung giờ uống (time - dosageNote, cách nhau bằng dấu phẩy)"
+          value={timeSlotsStr}
+          onChangeText={setTimeSlotsStr}
+          placeholder="08:00 - Uống sau ăn, 12:00 - Uống trước ăn"
+          multiline
+        />
+
+        <View style={styles.row}>
+          <View style={styles.col}>
+            <TextField
+              label="Các ngày trong tuần (daysOfWeek - cách nhau bằng dấu phẩy)"
+              value={daysOfWeekStr}
+              onChangeText={setDaysOfWeekStr}
+              placeholder="0 (CN) -> 6 (T7)"
+            />
+          </View>
+          <View style={styles.col}>
+            <TextField
+              label="Khoảng cách ngày (intervalDays)"
+              value={intervalDays}
+              onChangeText={setIntervalDays}
+              placeholder="1"
+            />
+          </View>
+        </View>
+
+        <TextField
+          label="Múi giờ (timezone)"
+          value={timezone}
+          onChangeText={setTimezone}
+          placeholder="Asia/Ho_Chi_Minh"
         />
 
         <View style={styles.buttonRow}>

@@ -91,7 +91,7 @@ export default function PrescriptionsScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="document-text-outline" size={48} color={MedsTheme.colors.textMuted} />
             <Text style={styles.emptyText}>Bệnh nhân này chưa có đơn thuốc nào.</Text>
-            <Pressable style={styles.primaryButton} onPress={() => router.push('/medicines/new')}>
+            <Pressable style={styles.primaryButton} onPress={() => router.push('/medication/new')}>
               <Ionicons name="add-circle" size={18} color="#FFFFFF" />
               <Text style={styles.primaryButtonText}>Thêm đơn thuốc mới</Text>
             </Pressable>
@@ -135,7 +135,7 @@ export default function PrescriptionsScreen() {
               </Pressable>
             ))}
 
-            <Pressable style={styles.primaryButton} onPress={() => router.push('/medicines/new')}>
+            <Pressable style={styles.primaryButton} onPress={() => router.push('/medication/new')}>
               <Ionicons name="add-circle" size={18} color="#FFFFFF" />
               <Text style={styles.primaryButtonText}>Thêm đơn thuốc mới</Text>
             </Pressable>

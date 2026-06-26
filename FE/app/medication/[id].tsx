@@ -55,6 +55,9 @@ export default function MedicationDetailScreen() {
   const [editPrescribedAt, setEditPrescribedAt] = useState<string>('');
   const [editNote, setEditNote] = useState<string>('');
   const [editIsActive, setEditIsActive] = useState<boolean>(true);
+  const [selectedMedIds, setSelectedMedIds] = useState<string[]>([]);
+  const [allMedications, setAllMedications] = useState<Medication[]>([]);
+  const [medicationsLoading, setMedicationsLoading] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
@@ -82,6 +85,8 @@ export default function MedicationDetailScreen() {
         setEditPrescribedAt(data.prescribedAt ? data.prescribedAt.split('T')[0] : '');
         setEditNote(data.note || '');
         setEditIsActive(data.isActive !== undefined ? data.isActive : true);
+        const medIds = data.medications ? data.medications.map((m: any) => m._id || m) : [];
+        setSelectedMedIds(medIds);
       } else {
         setError('Không tìm thấy dữ liệu đơn thuốc.');
       }
@@ -113,9 +118,8 @@ export default function MedicationDetailScreen() {
       if (editPrescribedAt && editPrescribedAt.trim()) body.prescribedAt = editPrescribedAt.trim();
       if (editNote !== undefined) body.note = editNote;
       if (editIsActive !== undefined) body.isActive = editIsActive;
-      if (prescription?.medications) {
-        body.medications = prescription.medications.map(m => m._id);
-      }
+
+      body.medications = selectedMedIds;
 
       console.log('Sending PUT to update prescription:', body);
       const response = await axios.put(url, body, {
@@ -216,9 +220,45 @@ export default function MedicationDetailScreen() {
     }
   };
 
+  const fetchAllMedications = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      setMedicationsLoading(true);
+      const url = 'http://localhost:3000/api/v1/medications/patient/6a3cef8fd789d8d7be4b7e47?page=1&limit=20';
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (response.data && response.data.data && response.data.data.medications) {
+        setAllMedications(response.data.data.medications);
+      }
+    } catch (err) {
+      console.error('Error fetching medications:', err);
+    } finally {
+      setMedicationsLoading(false);
+    }
+  }, [accessToken]);
+
+  const toggleMedicationSelection = useCallback((medId: string) => {
+    setSelectedMedIds((prev) => {
+      if (prev.includes(medId)) {
+        return prev.filter((id) => id !== medId);
+      } else {
+        return [...prev, medId];
+      }
+    });
+  }, []);
+
   useEffect(() => {
     fetchPrescriptionDetail();
   }, [fetchPrescriptionDetail]);
+
+  useEffect(() => {
+    if (isEditing && allMedications.length === 0) {
+      fetchAllMedications();
+    }
+  }, [isEditing, allMedications.length, fetchAllMedications]);
 
   if (loading) {
     return (
@@ -382,6 +422,48 @@ export default function MedicationDetailScreen() {
                 onChangeText={setEditDoctorName}
                 placeholder="Tên bác sĩ"
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Danh sách thuốc (Chọn một hoặc nhiều)</Text>
+              {medicationsLoading ? (
+                <View style={styles.smallLoadingWrap}>
+                  <ActivityIndicator size="small" color={MedsTheme.colors.primary} />
+                  <Text style={styles.smallLoadingText}>Đang tải danh sách thuốc...</Text>
+                </View>
+              ) : allMedications.length === 0 ? (
+                <Text style={styles.emptyText}>Không tìm thấy thuốc nào của bệnh nhân.</Text>
+              ) : (
+                <View style={styles.medSelectorList}>
+                  {allMedications.map((med) => {
+                    const isSelected = selectedMedIds.includes(med._id);
+                    return (
+                      <Pressable
+                        key={med._id}
+                        style={[
+                          styles.medSelectorItem,
+                          isSelected && styles.medSelectorItemActive
+                        ]}
+                        onPress={() => toggleMedicationSelection(med._id)}
+                      >
+                        <Ionicons
+                          name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                          size={20}
+                          color={isSelected ? MedsTheme.colors.success : MedsTheme.colors.textMuted}
+                        />
+                        <View style={styles.medSelectorInfo}>
+                          <Text style={[styles.medSelectorName, isSelected && styles.medSelectorNameActive]}>
+                            {med.name}
+                          </Text>
+                          <Text style={styles.medSelectorDesc}>
+                            {med.dosage}{med.form ? ` • ${med.form}` : ''}{med.usageNote ? ` • ${med.usageNote}` : ''}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -859,6 +941,50 @@ const styles = StyleSheet.create({
     color: '#4F5E74',
     fontWeight: '700',
     fontSize: 16,
+  },
+  smallLoadingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+  },
+  smallLoadingText: {
+    color: MedsTheme.colors.textMuted,
+    fontSize: 14,
+  },
+  medSelectorList: {
+    gap: 8,
+    marginTop: 4,
+  },
+  medSelectorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F8FBFF',
+    borderWidth: 1,
+    borderColor: '#E4E9F2',
+    borderRadius: 10,
+    padding: 12,
+  },
+  medSelectorItemActive: {
+    backgroundColor: '#EAF6FF',
+    borderColor: '#A8D2FF',
+  },
+  medSelectorInfo: {
+    flex: 1,
+  },
+  medSelectorName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: MedsTheme.colors.textMain,
+  },
+  medSelectorNameActive: {
+    color: '#005DCC',
+  },
+  medSelectorDesc: {
+    fontSize: 12,
+    color: MedsTheme.colors.textMuted,
+    marginTop: 2,
   },
 });
 

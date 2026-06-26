@@ -20,15 +20,15 @@ type AuthState = {
 
 type LoginInput =
   | {
-      mode: 'caregiver';
-      username: string;
-      password: string;
-    }
+    mode: 'caregiver';
+    username: string;
+    password: string;
+  }
   | {
-      mode: 'patient';
-      caregiverPhone: string;
-      authPin: string;
-    };
+    mode: 'patient';
+    caregiverPhone: string;
+    authPin: string;
+  };
 
 type RegisterInput = {
   name: string;
@@ -41,7 +41,7 @@ type AuthContextValue = AuthState & {
   login: (input: LoginInput) => Promise<{ role: AppRole }>;
   register: (input: RegisterInput) => Promise<void>;
   setPortal: (portal: AppPortal) => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<string | null | void>;
   logout: () => Promise<void>;
 };
 
@@ -191,13 +191,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response =
       input.mode === 'caregiver'
         ? await loginApi({
-            username: input.username,
-            password: input.password,
-          })
+          username: input.username,
+          password: input.password,
+        })
         : await loginPatientApi({
-            caregiverPhone: input.caregiverPhone,
-            authPin: input.authPin,
-          });
+          caregiverPhone: input.caregiverPhone,
+          authPin: input.authPin,
+        });
     const role = getRoleFromUser(response.data.user);
     const portal = role === 'patient' ? 'patient' : null;
 
