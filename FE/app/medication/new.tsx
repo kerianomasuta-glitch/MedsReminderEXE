@@ -146,6 +146,16 @@ export default function NewPrescriptionScreen() {
           <Text style={styles.cardTitle}>Tạo đơn thuốc mới</Text>
 
           <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Mã bệnh nhân (patientId)</Text>
+            <TextInput
+              style={styles.textInput}
+              value={patientId}
+              onChangeText={setPatientId}
+              placeholder="Nhập mã bệnh nhân"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Tên đơn thuốc</Text>
             <TextInput
               style={styles.textInput}
