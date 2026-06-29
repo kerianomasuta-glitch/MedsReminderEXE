@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { API_BASE_URL } from '@/constants/api-config';
 
 const medicationApi = axios.create({
   baseURL: `${API_BASE_URL}/api/v1/medications`,

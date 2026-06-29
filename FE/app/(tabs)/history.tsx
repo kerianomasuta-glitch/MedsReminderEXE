@@ -7,6 +7,8 @@ import { historyDateStripMock } from "@/constants/app-mock";
 import { historyDetail, historyScores } from "@/constants/meds-data";
 import { MedsTheme } from "@/constants/meds-theme";
 
+const { colors, typography, radius, spacing, fonts } = MedsTheme;
+
 export default function HistoryScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -19,7 +21,7 @@ export default function HistoryScreen() {
             <Ionicons
               name="person"
               size={16}
-              color={MedsTheme.colors.primaryDark}
+              color={colors.ink}
             />
           </View>
           <Text style={styles.user}>MedsReminder</Text>
@@ -27,7 +29,7 @@ export default function HistoryScreen() {
           <Ionicons
             name="notifications-outline"
             size={20}
-            color={MedsTheme.colors.primaryDark}
+            color={colors.ink}
           />
         </View>
 
@@ -94,7 +96,7 @@ export default function HistoryScreen() {
               <Ionicons
                 name="sunny"
                 size={15}
-                color={MedsTheme.colors.primaryDark}
+                color={colors.ink}
               />
             </View>
             <View style={styles.detailInfo}>
@@ -121,164 +123,169 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: MedsTheme.colors.appBackground,
+    backgroundColor: colors.canvas,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
     paddingBottom: 40,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: spacing.sm + 2,
     gap: 10,
   },
   avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#D7EDF9",
+    backgroundColor: colors.surfaceStrong,
     alignItems: "center",
     justifyContent: "center",
   },
   user: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: MedsTheme.colors.textMain,
+    ...typography.displayMd,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   title: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: MedsTheme.colors.textMain,
+    ...typography.displayLg,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   subtitle: {
     marginTop: 3,
-    color: MedsTheme.colors.textMuted,
-    marginBottom: 12,
+    ...typography.bodySm,
+    fontFamily: fonts.sans,
+    color: colors.body,
+    marginBottom: spacing.sm,
   },
   dateStrip: {
-    backgroundColor: MedsTheme.colors.card,
-    borderRadius: 14,
+    backgroundColor: colors.surfaceCard,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    borderColor: colors.hairlineStrong,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: spacing.sm + 2,
   },
   datePill: {
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderRadius: 10,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.md,
     minWidth: 36,
     alignItems: "center",
   },
   datePillActive: {
-    backgroundColor: MedsTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   dateText: {
-    color: MedsTheme.colors.textMuted,
-    fontWeight: "600",
+    color: colors.muted,
+    fontFamily: fonts.sansMedium,
     fontSize: 13,
   },
   dateTextActive: {
-    color: "#FFFFFF",
+    color: colors.onPrimary,
   },
   progressCard: {
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: MedsTheme.colors.card,
-    padding: 16,
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.surfaceCard,
+    padding: spacing.base,
+    ...MedsTheme.elevation.card,
   },
   progressTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: MedsTheme.colors.textMain,
+    ...typography.titleMd,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   circleWrap: {
     alignItems: "center",
-    paddingVertical: 16,
+    paddingVertical: spacing.base,
   },
   circle: {
     width: 166,
     height: 166,
     borderRadius: 83,
     borderWidth: 10,
-    borderColor: MedsTheme.colors.primary,
+    borderColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F8FBFF",
+    backgroundColor: colors.canvasSoft,
   },
   circlePercent: {
     fontSize: 36,
-    fontWeight: "800",
-    color: MedsTheme.colors.textMain,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   circleSub: {
     marginTop: 2,
-    color: MedsTheme.colors.primaryDark,
-    fontWeight: "600",
+    color: colors.body,
+    fontFamily: fonts.sansMedium,
   },
   statsRow: {
-    marginTop: 12,
+    marginTop: spacing.sm,
     flexDirection: "row",
     gap: 10,
   },
   statCard: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
   },
   statOnTime: {
-    backgroundColor: "#EAF4FF",
-    borderColor: "#CFE4FF",
+    backgroundColor: '#ECFDF3',
+    borderColor: '#BBF7D0',
   },
   statLate: {
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FFE4C1",
+    backgroundColor: '#FFF8EE',
+    borderColor: '#F0D9A8',
   },
   statSkip: {
-    backgroundColor: "#FFF1F1",
-    borderColor: "#FFCECE",
+    backgroundColor: '#FFF9F9',
+    borderColor: colors.semanticError,
   },
   statNum: {
-    fontWeight: "800",
+    fontFamily: fonts.sansSemiBold,
     fontSize: 25,
-    color: MedsTheme.colors.textMain,
+    color: colors.ink,
   },
   statLabel: {
     marginTop: 2,
-    color: MedsTheme.colors.textMuted,
-    fontWeight: "600",
+    color: colors.body,
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
   },
   todayTitle: {
     marginTop: 18,
     marginBottom: 10,
-    fontSize: 23,
-    fontWeight: "700",
-    color: MedsTheme.colors.textMain,
+    ...typography.displayMd,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   detailCard: {
-    backgroundColor: MedsTheme.colors.card,
-    borderRadius: 14,
+    backgroundColor: colors.surfaceCard,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    padding: 12,
+    borderColor: colors.hairlineStrong,
+    padding: spacing.sm,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginBottom: 8,
+    marginBottom: spacing.xs,
+    ...MedsTheme.elevation.card,
   },
   detailIcon: {
     width: 34,
     height: 34,
-    borderRadius: 17,
-    backgroundColor: "#EAF2FF",
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceStrong,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -286,28 +293,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailTime: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: MedsTheme.colors.textMain,
+    ...typography.titleSm,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   detailName: {
     marginTop: 2,
-    color: MedsTheme.colors.textMuted,
+    ...typography.bodySm,
+    fontFamily: fonts.sans,
+    color: colors.body,
   },
   resultBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 5,
   },
   badgeTaken: {
-    backgroundColor: "#DDF5E8",
+    backgroundColor: '#ECFDF3',
   },
   badgeLate: {
-    backgroundColor: "#FFEBD4",
+    backgroundColor: '#FFF8EE',
   },
   resultBadgeText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: MedsTheme.colors.textMain,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
 });

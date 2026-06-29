@@ -3,10 +3,17 @@ import { router, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator, Modal, Alert, Platform, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import axios from 'axios';
-
 import { MedsTheme } from '@/constants/meds-theme';
-import { useAuth } from '@/store/auth-store';
+import { formatMedicationForm, formatMedicationUsage } from '@/constants/medication-labels';
+import { getMedicationDetailApi } from '@/services/medication-api';
+import {
+  deleteScheduleApi,
+  getScheduleDetailApi,
+  getScheduleErrorMessage,
+  getSchedulesByPatientApi,
+  updateScheduleApi,
+} from '@/services/schedule-api';
+import { resolveAuthUserId, useAuth } from '@/store/auth-store';
 
 interface TimeSlot {
   time: string;
@@ -80,7 +87,7 @@ export default function ScheduleScreen() {
   const [schedules, setSchedules] = useState<MedicationSchedule[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { accessToken, role } = useAuth();
+  const { accessToken, role, user } = useAuth();
 
   const [selectedSchedule, setSelectedSchedule] = useState<MedicationSchedule | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -103,76 +110,51 @@ export default function ScheduleScreen() {
   const [editTimezone, setEditTimezone] = useState<string>('');
 
   const fetchSchedules = useCallback(async () => {
-    if (!accessToken) {
+    const patientId = resolveAuthUserId(user);
+    if (!accessToken || role !== 'patient' || !patientId) {
       setSchedules([]);
+      setError(null);
       setLoading(false);
       return;
     }
     try {
       setLoading(true);
       setError(null);
-      const url = 'http://localhost:3000/api/v1/schedules/patient/6a3cef8fd789d8d7be4b7e47?page=1&limit=20';
-
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.data && response.data.data && response.data.data.schedules) {
-        setSchedules(response.data.data.schedules);
-      } else {
-        setSchedules([]);
-      }
-    } catch (err: any) {
-      console.error('Error fetching schedules:', err);
-      setError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi tải lịch uống thuốc');
+      const response = await getSchedulesByPatientApi(patientId, accessToken, { page: 1, limit: 20 });
+      setSchedules((response.data.schedules ?? []) as MedicationSchedule[]);
+    } catch (err: unknown) {
+      setError(getScheduleErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [accessToken, role]);
+  }, [accessToken, role, user]);
 
   const fetchScheduleDetail = useCallback(async (id: string) => {
     if (!accessToken) return;
     try {
       setDetailLoading(true);
       setModalMedications([]);
-      const url = `http://localhost:3000/api/v1/schedules/${id}`;
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      if (response.data && response.data.data) {
-        const scheduleData = response.data.data;
-        setSelectedSchedule(scheduleData);
-        setModalVisible(true);
+      const response = await getScheduleDetailApi(id, accessToken);
+      const scheduleData = response.data as MedicationSchedule;
+      setSelectedSchedule(scheduleData);
+      setModalVisible(true);
 
-        // Fetch medications detail if present
-        const medIds = scheduleData.prescriptionId?.medications || [];
-        if (medIds.length > 0) {
-          setModalMedsLoading(true);
-          try {
-            const requests = medIds.map((medId: string) =>
-              axios.get(`http://localhost:3000/api/v1/medications/${medId}`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              })
-            );
-            const responses = await Promise.all(requests);
-            const medsData = responses.map((res) => res.data?.data).filter(Boolean);
-            setModalMedications(medsData);
-          } catch (mErr) {
-            console.error('Error fetching modal medications:', mErr);
-          } finally {
-            setModalMedsLoading(false);
-          }
+      const medIds = scheduleData.prescriptionId?.medications || [];
+      if (medIds.length > 0) {
+        setModalMedsLoading(true);
+        try {
+          const responses = await Promise.all(
+            medIds.map((medId: string) => getMedicationDetailApi(medId, accessToken)),
+          );
+          setModalMedications(responses.map((res) => res.data).filter(Boolean));
+        } catch (mErr) {
+          console.error('Error fetching modal medications:', mErr);
+        } finally {
+          setModalMedsLoading(false);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching schedule detail:', err);
-      // Fallback to local schedule if network request fails
       const localItem = schedules.find((s) => s._id === id);
       if (localItem) {
         setSelectedSchedule(localItem);
@@ -206,7 +188,6 @@ export default function ScheduleScreen() {
     if (!accessToken || !selectedSchedule) return;
     try {
       setUpdateLoading(true);
-      const url = `http://localhost:3000/api/v1/schedules/${selectedSchedule._id}`;
 
       // Parse timeSlots
       const timeSlots = editTimeSlotsStr
@@ -226,41 +207,36 @@ export default function ScheduleScreen() {
         .map((s) => parseInt(s.trim(), 10))
         .filter((val) => !isNaN(val) && val >= 0 && val <= 6);
 
-      const body = {
-        startDate: editStartDate,
-        endDate: editEndDate || undefined,
-        frequencyType: editFrequencyType,
-        timeSlots,
-        daysOfWeek: daysOfWeek.length > 0 ? daysOfWeek : undefined,
-        intervalDays: parseInt(editIntervalDays, 10) || undefined,
-        reminderMinutesBefore: parseInt(editReminderMinutesBefore, 10) || 5,
-        timezone: editTimezone,
-      };
-
-      const response = await axios.put(url, body, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await updateScheduleApi(
+        selectedSchedule._id,
+        {
+          startDate: editStartDate,
+          endDate: editEndDate || undefined,
+          frequencyType: editFrequencyType as MedicationSchedule['frequencyType'],
+          timeSlots,
+          daysOfWeek: daysOfWeek.length > 0 ? daysOfWeek : undefined,
+          intervalDays: parseInt(editIntervalDays, 10) || undefined,
+          reminderMinutesBefore: parseInt(editReminderMinutesBefore, 10) || 5,
+          timezone: editTimezone,
         },
-      });
+        accessToken,
+      );
 
-      if (response.data && response.data.status === 'success') {
+      if (response.status === 'success') {
         if (Platform.OS === 'web') {
           window.alert('Cập nhật lịch uống thuốc thành công!');
         } else {
           Alert.alert('Thành công', 'Cập nhật lịch uống thuốc thành công!');
         }
         setIsEditingDetail(false);
-        // Refresh details modal with new data
-        setSelectedSchedule(response.data.data);
-        // Refresh main list
+        setSelectedSchedule(response.data as MedicationSchedule);
         fetchSchedules();
       } else {
         alert('Cập nhật lịch uống thuốc thất bại!');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating schedule:', err);
-      const errMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi cập nhật lịch thuốc';
+      const errMsg = getScheduleErrorMessage(err);
       if (Platform.OS === 'web') {
         window.alert('Thất bại: ' + errMsg);
       } else {
@@ -277,14 +253,9 @@ export default function ScheduleScreen() {
     const performDelete = async () => {
       try {
         setDeleteLoading(true);
-        const url = `http://localhost:3000/api/v1/schedules/${selectedSchedule._id}`;
-        const response = await axios.delete(url, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const response = await deleteScheduleApi(selectedSchedule._id, accessToken);
 
-        if (response.data && response.data.status === 'success') {
+        if (response.status === 'success') {
           if (Platform.OS === 'web') {
             window.alert('Xóa lịch uống thuốc thành công!');
           } else {
@@ -564,8 +535,12 @@ export default function ScheduleScreen() {
                                 <Ionicons name="medical" size={14} color={MedsTheme.colors.success} />
                                 <Text style={styles.medDetailName}>{index + 1}. {med.name}</Text>
                               </View>
-                              <Text style={styles.medDetailText}>Dạng: {med.form || 'N/A'} • Liều lượng: {med.dosage || 'N/A'} • Đơn vị: {med.unit || 'N/A'}</Text>
-                              {med.usageNote && <Text style={styles.medDetailText}>Cách dùng: {med.usageNote}</Text>}
+                              <Text style={styles.medDetailText}>
+                                Dạng: {formatMedicationForm(med.form) || 'N/A'} • Liều lượng: {med.dosage || 'N/A'} • Đơn vị: {med.unit || 'N/A'}
+                              </Text>
+                              {med.usageNote && (
+                                <Text style={styles.medDetailText}>Cách dùng: {formatMedicationUsage(med.usageNote)}</Text>
+                              )}
                               {med.description && <Text style={styles.medDetailText}>Mô tả: {med.description}</Text>}
                             </View>
                           ))}

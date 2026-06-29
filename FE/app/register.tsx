@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { ActionButton, AppScreen, PageHeader, SectionCard, TextField } from '@/components/meds/ui-kit';
@@ -12,7 +12,6 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,14 +21,12 @@ export default function RegisterScreen() {
   const emailError = submitted && !email.trim() ? 'Vui lòng nhập email.' : undefined;
   const phoneError = submitted && !phone.trim() ? 'Vui lòng nhập số điện thoại.' : undefined;
   const passwordError = submitted && password.length < 6 ? 'Mật khẩu tối thiểu 6 ký tự.' : undefined;
-  const confirmError =
-    submitted && confirmPassword !== password ? 'Mật khẩu xác nhận không khớp.' : undefined;
   const termsError = submitted && !accepted ? 'Bạn cần đồng ý điều khoản.' : undefined;
 
   const submit = async () => {
     if (isSubmitting) return;
     setSubmitted(true);
-    if (nameError || emailError || phoneError || passwordError || confirmError || termsError) {
+    if (nameError || emailError || phoneError || passwordError || termsError) {
       return;
     }
     try {
@@ -59,38 +56,30 @@ export default function RegisterScreen() {
           label="Họ tên"
           value={fullName}
           onChangeText={setFullName}
-          placeholder="Nguyễn Văn A"
+         
           error={nameError}
         />
         <TextField
           label="Email"
           value={email}
           onChangeText={setEmail}
-          placeholder="example@mail.com"
+          
           error={emailError}
         />
         <TextField
           label="Số điện thoại"
           value={phone}
           onChangeText={setPhone}
-          placeholder="09xxxxxxxx"
+         
           error={phoneError}
         />
         <TextField
           label="Mật khẩu"
           value={password}
           onChangeText={setPassword}
-          placeholder="Ít nhất 6 ký tự"
+         
           secureTextEntry
           error={passwordError}
-        />
-        <TextField
-          label="Xác nhận mật khẩu"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          placeholder="Nhập lại mật khẩu"
-          error={confirmError}
         />
 
         <Pressable

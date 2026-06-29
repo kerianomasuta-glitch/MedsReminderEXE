@@ -2,6 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
+import { MedsTheme } from '@/constants/meds-theme';
+
 type FeedbackTone = 'success' | 'info' | 'warning';
 
 type FeedbackToastProps = {
@@ -11,26 +13,28 @@ type FeedbackToastProps = {
   onHide?: () => void;
 };
 
+const { colors, typography, radius, fonts } = MedsTheme;
+
 const toneColors: Record<FeedbackTone, { bg: string; border: string; text: string; icon: string; iconName: 'checkmark-circle' | 'information-circle' | 'alert-circle' }> = {
   success: {
-    bg: '#E8F8EF',
-    border: '#BEE8CF',
-    text: '#146C47',
-    icon: '#1D8F5D',
+    bg: '#ECFDF3',
+    border: '#BBF7D0',
+    text: colors.semanticSuccess,
+    icon: colors.semanticSuccess,
     iconName: 'checkmark-circle',
   },
   info: {
-    bg: '#EAF3FF',
-    border: '#CDE1FF',
-    text: '#174D95',
-    icon: '#2C6FCE',
+    bg: colors.surfaceStrong,
+    border: colors.hairlineStrong,
+    text: colors.ink,
+    icon: colors.ink,
     iconName: 'information-circle',
   },
   warning: {
-    bg: '#FFF3E3',
-    border: '#F6D6AB',
-    text: '#8D5600',
-    icon: '#B87400',
+    bg: '#FFF8EE',
+    border: '#F0D9A8',
+    text: colors.accentWarning,
+    icon: colors.accentWarning,
     iconName: 'alert-circle',
   },
 };
@@ -103,7 +107,7 @@ export function FeedbackToast({ message, tone = 'success', durationMs = 1800, on
 
 const styles = StyleSheet.create({
   toast: {
-    borderRadius: 10,
+    borderRadius: radius.md,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -116,7 +120,8 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    fontWeight: '700',
+    ...typography.bodySm,
+    fontFamily: fonts.sansMedium,
     lineHeight: 18,
   },
 });

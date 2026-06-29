@@ -3,10 +3,13 @@ import { router, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import axios from 'axios';
 
 import { MedsTheme } from '@/constants/meds-theme';
-import { useAuth } from '@/store/auth-store';
+import {
+  getPrescriptionErrorMessage,
+  getPrescriptionsByPatientApi,
+} from '@/services/prescription-api';
+import { resolveAuthUserId, useAuth } from '@/store/auth-store';
 
 interface Medication {
   _id: string;
@@ -30,37 +33,27 @@ export default function PrescriptionsScreen() {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { accessToken } = useAuth();
+  const { accessToken, role, user } = useAuth();
 
   const fetchPrescriptions = useCallback(async () => {
-    if (!accessToken) {
+    const patientId = resolveAuthUserId(user);
+    if (!accessToken || role !== 'patient' || !patientId) {
       setPrescriptions([]);
+      setError(null);
       setLoading(false);
       return;
     }
     try {
       setLoading(true);
       setError(null);
-      const url = 'http://localhost:3000/api/v1/prescriptions/patient/6a3cef8fd789d8d7be4b7e47?page=1&limit=20';
-
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.data && response.data.data && response.data.data.prescriptions) {
-        setPrescriptions(response.data.data.prescriptions);
-      } else {
-        setPrescriptions([]);
-      }
-    } catch (err: any) {
-      console.error('Error fetching prescriptions in Tab:', err);
-      setError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi tải đơn thuốc');
+      const response = await getPrescriptionsByPatientApi({ patientId, page: 1, limit: 20 }, accessToken);
+      setPrescriptions((response.data.prescriptions ?? []) as Prescription[]);
+    } catch (err: unknown) {
+      setError(getPrescriptionErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, role, user]);
 
   useFocusEffect(
     useCallback(() => {
