@@ -1,9 +1,11 @@
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AppAlert } from '@/components/meds/app-alert';
 import { FeedbackToast } from '@/components/meds/feedback-toast';
 import { ActionButton, AppScreen, BrandHeader, ChoiceChip, SectionCard, TextField } from '@/components/meds/ui-kit';
+import { MedsTheme } from '@/constants/meds-theme';
 import { useAuth } from '@/store/auth-store';
 
 export default function LoginScreen() {
@@ -13,20 +15,29 @@ export default function LoginScreen() {
   const [caregiverPhone, setCaregiverPhone] = useState('');
   const [password, setPassword] = useState('');
   const [authPin, setAuthPin] = useState('');
-  const [triedSubmit, setTriedSubmit] = useState(false);
+  const [submittedMode, setSubmittedMode] = useState<'caregiver' | 'patient' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [loginAlert, setLoginAlert] = useState<{ title: string; message: string } | null>(null);
+
+  const showCaregiverErrors = submittedMode === 'caregiver' && loginMode === 'caregiver';
+  const showPatientErrors = submittedMode === 'patient' && loginMode === 'patient';
 
   const accountError =
-    triedSubmit && loginMode === 'caregiver' && !account.trim() ? 'Vui lòng nhập email hoặc số điện thoại.' : undefined;
-  const passwordError = triedSubmit && loginMode === 'caregiver' && !password.trim() ? 'Vui lòng nhập mật khẩu.' : undefined;
+    showCaregiverErrors && !account.trim() ? 'Vui lòng nhập email hoặc số điện thoại.' : undefined;
+  const passwordError = showCaregiverErrors && !password.trim() ? 'Vui lòng nhập mật khẩu.' : undefined;
   const caregiverPhoneError =
-    triedSubmit && loginMode === 'patient' && !caregiverPhone.trim() ? 'Vui lòng nhập SĐT người thân.' : undefined;
-  const authPinError = triedSubmit && loginMode === 'patient' && !authPin.trim() ? 'Vui lòng nhập mã PIN 4 số.' : undefined;
+    showPatientErrors && !caregiverPhone.trim() ? 'Vui lòng nhập SĐT người thân.' : undefined;
+  const authPinError = showPatientErrors && !authPin.trim() ? 'Vui lòng nhập mã PIN 4 số.' : undefined;
+
+  const switchLoginMode = (mode: 'caregiver' | 'patient') => {
+    setLoginMode(mode);
+    setSubmittedMode(null);
+  };
 
   const submit = async () => {
     if (isSubmitting) return;
-    setTriedSubmit(true);
+    setSubmittedMode(loginMode);
     if (loginMode === 'caregiver' && (!account.trim() || !password.trim())) {
       return;
     }
@@ -35,7 +46,7 @@ export default function LoginScreen() {
     }
     try {
       setIsSubmitting(true);
-      const { role } =
+      const result =
         loginMode === 'caregiver'
           ? await login({
               mode: 'caregiver',
@@ -47,7 +58,14 @@ export default function LoginScreen() {
               caregiverPhone: caregiverPhone.trim(),
               authPin: authPin.trim(),
             });
+
+      if ('error' in result) {
+        setLoginAlert({ title: 'Thông báo', message: result.error });
+        return;
+      }
+
       setFeedbackMessage('Đăng nhập thành công');
+      const { role } = result;
       if (role === 'admin') {
         router.replace('/admin');
       } else if (role === 'caregiver') {
@@ -55,22 +73,21 @@ export default function LoginScreen() {
       } else {
         router.replace('/');
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Đăng nhập thất bại';
-      setFeedbackMessage(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <AppScreen>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AppScreen hero paddedBottom={120}>
       <BrandHeader slogan="Nhắc lịch uống thuốc mỗi ngày" />
 
       <SectionCard>
         <View style={styles.modeRow}>
-          <ChoiceChip label="Người thân chăm sóc" active={loginMode === 'caregiver'} onPress={() => setLoginMode('caregiver')} />
-          <ChoiceChip label="Bệnh nhân" active={loginMode === 'patient'} onPress={() => setLoginMode('patient')} />
+          <ChoiceChip label="Người thân chăm sóc" active={loginMode === 'caregiver'} onPress={() => switchLoginMode('caregiver')} />
+          <ChoiceChip label="Bệnh nhân" active={loginMode === 'patient'} onPress={() => switchLoginMode('patient')} />
         </View>
 
         {loginMode === 'caregiver' ? (
@@ -79,7 +96,7 @@ export default function LoginScreen() {
               label="Email hoặc số điện thoại"
               value={account}
               onChangeText={setAccount}
-              placeholder="example@mail.com hoặc 09xxxxxxxx"
+              
               error={accountError}
             />
 
@@ -87,7 +104,7 @@ export default function LoginScreen() {
               label="Mật khẩu"
               value={password}
               onChangeText={setPassword}
-              placeholder="Nhập mật khẩu"
+             
               secureTextEntry
               error={passwordError}
             />
@@ -98,7 +115,7 @@ export default function LoginScreen() {
               label="Số điện thoại người thân"
               value={caregiverPhone}
               onChangeText={setCaregiverPhone}
-              placeholder="09xxxxxxxx"
+             
               error={caregiverPhoneError}
             />
 
@@ -122,12 +139,20 @@ export default function LoginScreen() {
           </Pressable>
         ) : null}
       </SectionCard>
+      </AppScreen>
+
+      <AppAlert
+        visible={loginAlert !== null}
+        title={loginAlert?.title ?? ''}
+        message={loginAlert?.message ?? ''}
+        onClose={() => setLoginAlert(null)}
+      />
       <FeedbackToast
         message={feedbackMessage}
         tone={feedbackMessage?.includes('thành công') ? 'success' : 'warning'}
         onHide={() => setFeedbackMessage(null)}
       />
-    </AppScreen>
+    </>
   );
 }
 
@@ -144,10 +169,13 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   inlineText: {
-    color: '#5D6D86',
+    color: MedsTheme.colors.body,
+    fontFamily: MedsTheme.fonts.sans,
+    fontSize: 14,
   },
   inlineStrong: {
-    color: '#1C70D1',
-    fontWeight: '700',
+    color: MedsTheme.colors.textLink,
+    fontFamily: MedsTheme.fonts.sansMedium,
+    fontWeight: '500',
   },
 });

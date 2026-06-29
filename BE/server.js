@@ -12,9 +12,10 @@ const server = http.createServer(app);
 
 connectDB()
   .then(() => {
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on PORT: ${PORT}`);
       console.log(`Swagger: http://localhost:${PORT}/api-docs`);
+      console.log(`LAN: use your computer IP with port ${PORT} for mobile devices`);
     });
   })
   .catch((err) => {

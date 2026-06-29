@@ -1,4 +1,14 @@
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { API_BASE_URL } from '@/constants/api-config';
+
+export class AuthRequestError extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.name = 'AuthRequestError';
+    this.statusCode = statusCode;
+  }
+}
 
 export type AuthUser = {
   _id?: string;
@@ -25,39 +35,117 @@ export type PatientProfileInput = {
   gender?: 'male' | 'female' | 'other';
 };
 
-async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-    },
-    credentials: 'include',
-  });
+function mapCaregiverLoginError(statusCode: number): string {
+  if (statusCode === 401 || statusCode === 403 || statusCode === 400) {
+    return 'Sai tài khoản hoặc mật khẩu';
+  }
+  if (statusCode >= 500) {
+    return 'Không thể kết nối máy chủ. Vui lòng thử lại sau.';
+  }
+  return 'Đăng nhập thất bại';
+}
 
-  const json = await res.json();
+function mapPatientLoginError(statusCode: number): string {
+  if (statusCode === 401 || statusCode === 403 || statusCode === 400) {
+    return 'Số điện thoại người thân hoặc mã PIN không đúng';
+  }
+  if (statusCode >= 500) {
+    return 'Không thể kết nối máy chủ. Vui lòng thử lại sau.';
+  }
+  return 'Đăng nhập thất bại';
+}
+
+export type LoginApiResult =
+  | { ok: true; data: AuthTokensPayload }
+  | { ok: false; message: string };
+
+async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init.headers ?? {}),
+      },
+      credentials: 'include',
+    });
+  } catch {
+    throw new Error('Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.');
+  }
+
+  let json: { message?: string } | null = null;
+  try {
+    json = await res.json();
+  } catch {
+    if (!res.ok) {
+      throw new AuthRequestError('Request failed', res.status);
+    }
+    throw new Error('Phản hồi từ máy chủ không hợp lệ.');
+  }
+
   if (!res.ok) {
-    throw new Error(json?.message ?? 'Request failed');
+    throw new AuthRequestError(json?.message ?? 'Request failed', res.status);
   }
 
   return json as T;
 }
 
-export async function loginApi(params: { username: string; password: string }) {
+export async function loginApi(params: { username: string; password: string }): Promise<LoginApiResult> {
   const { username, password } = params;
   const payload = username.includes('@') ? { email: username, password } : { phone: username, password };
 
-  return requestJson<{ status: string; message: string; data: AuthTokensPayload }>('/api/v1/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return { ok: false, message: 'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.' };
+  }
+
+  let json: { data?: AuthTokensPayload } | null = null;
+  try {
+    json = await res.json();
+  } catch {
+    return { ok: false, message: mapCaregiverLoginError(res.status) };
+  }
+
+  if (!res.ok || !json?.data) {
+    return { ok: false, message: mapCaregiverLoginError(res.status) };
+  }
+
+  return { ok: true, data: json.data };
 }
 
-export async function loginPatientApi(params: { caregiverPhone: string; authPin: string }) {
-  return requestJson<{ status: string; message: string; data: AuthTokensPayload }>('/api/v1/auth/patient-login', {
-    method: 'POST',
-    body: JSON.stringify(params),
-  });
+export async function loginPatientApi(params: { caregiverPhone: string; authPin: string }): Promise<LoginApiResult> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/api/v1/auth/patient-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(params),
+    });
+  } catch {
+    return { ok: false, message: 'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.' };
+  }
+
+  let json: { data?: AuthTokensPayload } | null = null;
+  try {
+    json = await res.json();
+  } catch {
+    return { ok: false, message: mapPatientLoginError(res.status) };
+  }
+
+  if (!res.ok || !json?.data) {
+    return { ok: false, message: mapPatientLoginError(res.status) };
+  }
+
+  return { ok: true, data: json.data };
 }
 
 export async function registerApi(params: { name: string; email: string; phone: string; password: string }) {

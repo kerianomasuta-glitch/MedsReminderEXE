@@ -1,13 +1,27 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useHeaderHeight } from '@react-navigation/elements';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+  type ViewStyle,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MedsTheme } from '@/constants/meds-theme';
 
 type ScreenProps = {
   children: ReactNode;
   paddedBottom?: number;
+  hero?: boolean;
 };
 
 type HeaderProps = {
@@ -34,20 +48,51 @@ type ChoiceChipProps = {
   onPress?: () => void;
 };
 
+const { colors, typography, radius, spacing, fonts } = MedsTheme;
+
 const toneStyle = {
-  primary: { bg: MedsTheme.colors.primary, text: '#FFFFFF', border: MedsTheme.colors.primary },
-  secondary: { bg: '#FFFFFF', text: MedsTheme.colors.textMain, border: MedsTheme.colors.border },
-  danger: { bg: '#FCECEC', text: MedsTheme.colors.danger, border: '#F6C7C7' },
-  warning: { bg: '#FFF1DF', text: '#A65A00', border: '#F8D6AC' },
-  success: { bg: '#E4F5EC', text: MedsTheme.colors.success, border: '#BCE9CF' },
+  primary: { bg: colors.primary, text: colors.onPrimary, border: colors.primary },
+  secondary: { bg: colors.surfaceCard, text: colors.ink, border: colors.hairlineStrong },
+  danger: { bg: colors.dangerSoft, text: colors.critical, border: colors.semanticError },
+  warning: { bg: '#FFF8EE', text: colors.accentWarning, border: '#F0D9A8' },
+  success: { bg: '#ECFDF3', text: colors.semanticSuccess, border: '#BBF7D0' },
 } as const;
 
-export function AppScreen({ children, paddedBottom = 30 }: ScreenProps) {
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: paddedBottom }]}>
+export function AppScreen({ children, paddedBottom = 30, hero = false }: ScreenProps) {
+  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
+
+  const content = (
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        contentContainerStyle={[styles.content, styles.contentGrow, { paddingBottom: paddedBottom + insets.bottom }]}>
         {children}
       </ScrollView>
+    </KeyboardAvoidingView>
+  );
+
+  if (hero) {
+    return (
+      <View style={[styles.flex, { backgroundColor: colors.gradientSkyLight }]}>
+        <LinearGradient
+          colors={[colors.gradientSkyLight, colors.canvas, colors.canvas]}
+          locations={[0, 0.35, 1]}
+          style={[styles.heroGradient, { paddingTop: insets.top }]}>
+          {content}
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      {content}
     </SafeAreaView>
   );
 }
@@ -61,8 +106,8 @@ export function PageHeader({ title, subtitle }: HeaderProps) {
   );
 }
 
-export function SectionCard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function SectionCard({ children, style, dark }: { children: ReactNode; style?: ViewStyle; dark?: boolean }) {
+  return <View style={[styles.card, dark && styles.cardDark, style]}>{children}</View>;
 }
 
 export function FieldLabel({ text }: { text: string }) {
@@ -70,13 +115,12 @@ export function FieldLabel({ text }: { text: string }) {
 }
 
 export function TextField({ label, hint, error, ...props }: TextFieldProps) {
-  // Merge built-in input styles with any style passed via props
-  const { style, ...rest } = props as any;
+  const { style, ...rest } = props as TextInputProps & { style?: ViewStyle };
   return (
     <View style={styles.fieldBlock}>
       <FieldLabel text={label} />
       <TextInput
-        placeholderTextColor="#90A0B5"
+        placeholderTextColor={colors.muted}
         style={[styles.input, error && styles.inputError, style]}
         {...rest}
       />
@@ -90,11 +134,7 @@ export function ChoiceChip({ label, active, onPress }: ChoiceChipProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed, hovered }) => [
-        styles.chip,
-        active && styles.chipActive,
-        (pressed || hovered) && styles.chipHover,
-      ]}>
+      style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && styles.chipPressed]}>
       <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
     </Pressable>
   );
@@ -106,13 +146,13 @@ export function ActionButton({ label, onPress, tone = 'primary', icon }: ButtonP
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed, hovered }) => [
+      style={({ pressed }) => [
         styles.button,
         {
-          backgroundColor: picked.bg,
+          backgroundColor: tone === 'primary' && pressed ? colors.primaryActive : picked.bg,
           borderColor: picked.border,
         },
-        (pressed || hovered) && styles.buttonActive,
+        tone === 'primary' && pressed && styles.buttonPrimaryPressed,
       ]}>
       {icon}
       <Text style={[styles.buttonText, { color: picked.text }]}>{label}</Text>
@@ -120,12 +160,25 @@ export function ActionButton({ label, onPress, tone = 'primary', icon }: ButtonP
   );
 }
 
+/** Logo, app name and slogan — kept as brand identity */
 export function BrandHeader({ slogan }: { slogan: string }) {
   return (
     <View style={styles.brandWrap}>
-      <Image source={require('@/assets/images/medsreminder-logo-transparent.png')} style={styles.brandLogo} contentFit="contain" />
+      <Image
+        source={require('@/assets/images/medsreminder-icon-transparent.png')}
+        style={styles.brandIcon}
+        contentFit="contain"
+      />
       <Text style={styles.brandName}>MedsReminder</Text>
       <Text style={styles.brandSlogan}>{slogan}</Text>
+    </View>
+  );
+}
+
+export function BadgePill({ label }: { label: string }) {
+  return (
+    <View style={styles.badgePill}>
+      <Text style={styles.badgePillText}>{label}</Text>
     </View>
   );
 }
@@ -133,123 +186,156 @@ export function BrandHeader({ slogan }: { slogan: string }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: MedsTheme.colors.appBackground,
+    backgroundColor: colors.canvas,
+  },
+  flex: {
+    flex: 1,
+  },
+  heroGradient: {
+    flex: 1,
   },
   content: {
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    gap: 12,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  contentGrow: {
+    flexGrow: 1,
   },
   headerWrap: {
-    marginBottom: 2,
+    marginBottom: spacing.xxs,
   },
   pageTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: MedsTheme.colors.textMain,
+    ...typography.displayLg,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   pageSubtitle: {
-    marginTop: 2,
-    fontSize: 15,
-    color: MedsTheme.colors.textMuted,
+    marginTop: spacing.xxs,
+    ...typography.bodySm,
+    fontFamily: fonts.sans,
+    color: colors.body,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: MedsTheme.colors.card,
-    padding: 14,
-    gap: 10,
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.surfaceCard,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...MedsTheme.elevation.card,
+  },
+  cardDark: {
+    backgroundColor: colors.surfaceDark,
+    borderColor: colors.surfaceDark,
   },
   fieldBlock: {
     gap: 7,
   },
   fieldLabel: {
-    color: MedsTheme.colors.textMain,
-    fontSize: 15,
-    fontWeight: '700',
+    ...typography.titleSm,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
   input: {
-    minHeight: 50,
-    borderRadius: 12,
+    minHeight: 44,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: MedsTheme.colors.textMain,
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.surfaceCard,
+    paddingHorizontal: spacing.base,
+    ...typography.bodyMd,
+    fontFamily: fonts.sans,
+    color: colors.ink,
   },
   inputError: {
-    borderColor: '#E06060',
-    backgroundColor: '#FFF6F6',
+    borderColor: colors.semanticError,
+    backgroundColor: '#FFF9F9',
   },
   fieldHint: {
-    color: MedsTheme.colors.textMuted,
-    fontSize: 12,
+    ...typography.caption,
+    fontFamily: fonts.sans,
+    color: colors.muted,
   },
   fieldError: {
-    color: '#D23B3B',
-    fontSize: 12,
-    fontWeight: '600',
+    ...typography.caption,
+    fontFamily: fonts.sansMedium,
+    color: colors.critical,
   },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.surfaceCard,
   },
   chipActive: {
-    borderColor: '#7CB6FA',
-    backgroundColor: '#EAF3FF',
+    borderColor: colors.ink,
+    backgroundColor: colors.surfaceStrong,
   },
-  chipHover: {
-    opacity: 0.9,
+  chipPressed: {
+    opacity: 0.88,
   },
   chipText: {
-    color: MedsTheme.colors.textMain,
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.bodySm,
+    fontFamily: fonts.sansMedium,
+    color: colors.body,
   },
   chipTextActive: {
-    color: MedsTheme.colors.primaryDark,
+    color: colors.ink,
+    fontFamily: fonts.sansSemiBold,
   },
   button: {
-    minHeight: 50,
-    borderRadius: 12,
+    minHeight: 40,
+    borderRadius: radius.md,
     borderWidth: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.xs,
   },
-  buttonActive: {
-    opacity: 0.9,
-    transform: [{ scale: 0.995 }],
+  buttonPrimaryPressed: {
+    opacity: 0.95,
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.button,
+    fontFamily: fonts.sansMedium,
   },
   brandWrap: {
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
   },
-  brandLogo: {
-    width: 165,
-    height: 165,
+  brandIcon: {
+    width: 140,
+    height: 140,
   },
   brandName: {
-    marginTop: 2,
+    marginTop: spacing.xxs,
     fontSize: 32,
-    fontWeight: '800',
-    color: MedsTheme.colors.primaryDark,
+    fontFamily: fonts.sansSemiBold,
+    fontWeight: '600',
+    color: colors.brandName,
   },
   brandSlogan: {
-    fontSize: 15,
-    color: MedsTheme.colors.textMuted,
+    ...typography.bodySm,
+    fontFamily: fonts.sans,
+    color: colors.brandSlogan,
     textAlign: 'center',
+  },
+  badgePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surfaceStrong,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: spacing.xxs,
+  },
+  badgePillText: {
+    ...typography.captionUppercase,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
 });

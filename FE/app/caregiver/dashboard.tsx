@@ -1,11 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import {
+  CaregiverLogoutButton,
+  DashboardWelcomeBanner,
+  formatPatientGender,
+  PatientListCard,
+  SectionHeader,
+} from '@/components/meds/caregiver-ui';
 import { FeedbackToast } from '@/components/meds/feedback-toast';
-import { ActionButton, AppScreen, ChoiceChip, PageHeader, SectionCard, TextField } from '@/components/meds/ui-kit';
-import { medicineMock, reportMock } from '@/constants/app-mock';
+import { ActionButton, AppScreen, ChoiceChip, SectionCard, TextField } from '@/components/meds/ui-kit';
 import { MedsTheme } from '@/constants/meds-theme';
 import { createPatientApi, getMyPatientsApi, type AuthUser } from '@/services/auth-api';
 import { useAuth } from '@/store/auth-store';
@@ -91,31 +97,45 @@ export default function CaregiverDashboardScreen() {
     }
   };
 
+  const navigateToPatient = (item: { patient: AuthUser }) => {
+    const patientId = item.patient?._id;
+    if (!patientId) return;
+    router.push({
+      pathname: '/caregiver/patient/[id]',
+      params: {
+        id: patientId,
+        name: item.patient?.name ?? 'Bệnh nhân',
+        gender: item.patient?.gender ?? '',
+        birthday: item.patient?.birthday ? String(item.patient.birthday) : '',
+      },
+    });
+  };
+
   return (
-    <AppScreen>
+    <AppScreen hero paddedBottom={40}>
       <Stack.Screen
         options={{
-          headerRight: () => (
-            <Pressable style={styles.headerLogoutButton} onPress={() => void logout()} hitSlop={10}>
-              <Ionicons name="log-out-outline" size={20} color={MedsTheme.colors.textMain} />
-            </Pressable>
-          ),
-          headerRightContainerStyle: {
-            paddingRight: 8,
-          },
+          headerRight: () => <CaregiverLogoutButton onPress={() => void logout()} />,
         }}
       />
-      <PageHeader title="Theo dõi người thân" subtitle="Theo dõi trạng thái uống thuốc hằng ngày của người thân." />
 
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Đăng ký người bệnh mới</Text>
-        <ActionButton
-          label={showCreateForm ? 'Ẩn form đăng ký' : 'Đăng ký người bệnh'}
-          tone={showCreateForm ? 'secondary' : 'primary'}
-          onPress={() => setShowCreateForm((prev) => !prev)}
+      <DashboardWelcomeBanner patientCount={patients.length} loading={isLoadingPatients} />
+
+      <SectionCard style={styles.registerCard}>
+        <SectionHeader
+          title="Đăng ký người bệnh"
+          icon="person-add-outline"
+          action={
+            <Pressable
+              onPress={() => setShowCreateForm((prev) => !prev)}
+              style={({ pressed }) => [styles.toggleBtn, pressed && styles.toggleBtnPressed]}>
+              <Ionicons name={showCreateForm ? 'chevron-up' : 'add-circle'} size={18} color={MedsTheme.colors.textLink} />
+              <Text style={styles.toggleBtnText}>{showCreateForm ? 'Thu gọn' : 'Thêm mới'}</Text>
+            </Pressable>
+          }
         />
         {showCreateForm ? (
-          <>
+          <View style={styles.formWrap}>
             <TextField
               label="Họ tên bệnh nhân"
               value={name}
@@ -148,224 +168,140 @@ export default function CaregiverDashboardScreen() {
               <ChoiceChip label="Nữ" active={gender === 'female'} onPress={() => setGender('female')} />
               <ChoiceChip label="Khác" active={gender === 'other'} onPress={() => setGender('other')} />
             </View>
-            <ActionButton label={isCreatingPatient ? 'Đang tạo bệnh nhân...' : 'Tạo bệnh nhân'} onPress={submitCreatePatient} />
-          </>
-        ) : null}
-      </SectionCard>
-
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Danh sách bệnh nhân của bạn</Text>
-        {isLoadingPatients ? (
-          <Text style={styles.patientMeta}>Đang tải danh sách bệnh nhân...</Text>
-        ) : patients.length ? (
-          patients.map((item) => (
-            <View key={item.mappingId} style={styles.patientRow}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="person" size={14} color={MedsTheme.colors.primaryDark} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.patientName}>{item.patient?.name ?? 'Bệnh nhân'}</Text>
-                <Text style={styles.patientMeta}>
-                  {item.patient?.gender ?? 'Không rõ giới tính'} - {item.patient?.birthday ? new Date(item.patient.birthday as string).toLocaleDateString('vi-VN') : 'Chưa có ngày sinh'}
-                </Text>
-              </View>
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <Text style={styles.patientMeta}>Bạn chưa liên kết bệnh nhân nào.</Text>
+            <ActionButton
+              label={isCreatingPatient ? 'Đang tạo bệnh nhân...' : 'Tạo bệnh nhân'}
+              icon={<Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />}
+              onPress={submitCreatePatient}
+            />
           </View>
+        ) : (
+          <Text style={styles.registerHint}>Nhấn "Thêm mới" để đăng ký tài khoản bệnh nhân và liên kết với bạn.</Text>
         )}
       </SectionCard>
 
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Today Medication Status</Text>
-        <View style={styles.statsRow}>
-          <StatBox label="Đã uống" value="2" tone="#E4F4EC" />
-          <StatBox label="Sắp tới" value="1" tone="#E7F1FF" />
-          <StatBox label="Bỏ qua" value="1" tone="#FCEDEF" />
-          <StatBox label="Trễ giờ" value="1" tone="#FFF2DF" />
-        </View>
-      </SectionCard>
-
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
-        {medicineMock.map((item) => (
-          <View key={item.id} style={styles.medicineRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="medical" size={14} color={MedsTheme.colors.primaryDark} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.medicineName}>{item.name}</Text>
-              <Text style={styles.medicineMeta}>{item.time} - {item.dose}</Text>
-            </View>
-            <Text style={styles.statusText}>{item.status}</Text>
+      <View style={styles.listSection}>
+        <SectionHeader title="Danh sách bệnh nhân" icon="people-outline" />
+        {isLoadingPatients ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color={MedsTheme.colors.ink} />
+            <Text style={styles.loadingText}>Đang tải danh sách...</Text>
           </View>
-        ))}
-      </SectionCard>
+        ) : patients.length ? (
+          <View style={styles.patientList}>
+            {patients.map((item) => {
+              const patientName = item.patient?.name ?? 'Bệnh nhân';
+              const birthdayLabel = item.patient?.birthday
+                ? new Date(item.patient.birthday as string).toLocaleDateString('vi-VN')
+                : 'Chưa có ngày sinh';
+              const meta = `${formatPatientGender(item.patient?.gender)} · ${birthdayLabel}`;
 
-      <SectionCard style={styles.alertCard}>
-        <Text style={styles.alertTitle}>Cảnh báo nổi bật</Text>
-        <Text style={styles.alertText}>Thuốc huyết áp chưa được xác nhận lúc 06:00 PM.</Text>
-      </SectionCard>
-
-      <View style={styles.actionRow}>
-        <ActionButton label="Gọi nhắc nhở" tone="warning" onPress={() => router.push('/reminder')} />
-        <ActionButton label="Gửi lời nhắn" tone="secondary" onPress={() => router.push('/ai-assistant')} />
+              return (
+                <PatientListCard
+                  key={item.mappingId}
+                  name={patientName}
+                  meta={meta}
+                  onPress={() => navigateToPatient(item)}
+                />
+              );
+            })}
+          </View>
+        ) : (
+          <SectionCard>
+            <View style={styles.emptyWrap}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="heart-outline" size={28} color={MedsTheme.colors.textLink} />
+              </View>
+              <Text style={styles.emptyTitle}>Chưa có bệnh nhân</Text>
+              <Text style={styles.emptyText}>Đăng ký người thân đầu tiên để bắt đầu theo dõi lịch uống thuốc.</Text>
+            </View>
+          </SectionCard>
+        )}
       </View>
 
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Tuân thủ tuần này</Text>
-        <Text style={styles.percent}>{reportMock.weeklyPercent}%</Text>
-      </SectionCard>
-
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Cảnh báo gần đây</Text>
-        <Pressable style={styles.timelineRow} onPress={() => router.push('/missed-alert')}>
-          <Text style={styles.timelineTime}>18:25</Text>
-          <Text style={styles.timelineText}>Thuốc huyết áp - chưa xác nhận</Text>
-        </Pressable>
-      </SectionCard>
       <FeedbackToast message={feedbackMessage} tone="warning" onHide={() => setFeedbackMessage(null)} />
     </AppScreen>
   );
 }
 
-function StatBox({ label, value, tone }: { label: string; value: string; tone: string }) {
-  return (
-    <View style={[styles.statBox, { backgroundColor: tone }]}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  headerLogoutButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+  registerCard: {
+    marginTop: MedsTheme.spacing.xxs,
   },
-  patientName: {
-    fontSize: 21,
-    fontWeight: '800',
-    color: MedsTheme.colors.textMain,
-  },
-  patientMeta: {
-    marginTop: 2,
-    color: MedsTheme.colors.textMuted,
-  },
-  patientRow: {
+  toggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    minHeight: 44,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: MedsTheme.radius.pill,
+    backgroundColor: '#E8F4FF',
   },
-  emptyWrap: {
-    gap: 10,
+  toggleBtnPressed: {
+    opacity: 0.85,
+  },
+  toggleBtnText: {
+    fontSize: 13,
+    fontFamily: MedsTheme.fonts.sansMedium,
+    color: MedsTheme.colors.textLink,
+  },
+  formWrap: {
+    gap: MedsTheme.spacing.sm,
+  },
+  registerHint: {
+    fontSize: 14,
+    fontFamily: MedsTheme.fonts.sans,
+    color: MedsTheme.colors.body,
+    lineHeight: 20,
   },
   genderLabel: {
     color: MedsTheme.colors.textMain,
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: MedsTheme.fonts.sansSemiBold,
   },
   genderRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: MedsTheme.colors.textMain,
+  listSection: {
+    gap: MedsTheme.spacing.sm,
   },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  patientList: {
+    gap: MedsTheme.spacing.sm,
   },
-  statBox: {
-    width: '48.5%',
-    borderRadius: 10,
-    paddingVertical: 10,
+  loadingWrap: {
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#DDE6F3',
+    paddingVertical: 32,
+    gap: 10,
   },
-  statValue: {
-    color: MedsTheme.colors.textMain,
-    fontSize: 20,
-    fontWeight: '800',
+  loadingText: {
+    fontSize: 14,
+    fontFamily: MedsTheme.fonts.sans,
+    color: MedsTheme.colors.body,
   },
-  statLabel: {
-    color: MedsTheme.colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  medicineRow: {
-    flexDirection: 'row',
+  emptyWrap: {
     alignItems: 'center',
-    gap: 8,
-    minHeight: 46,
+    paddingVertical: MedsTheme.spacing.base,
+    gap: MedsTheme.spacing.xs,
   },
-  iconCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#EAF2FF',
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#E8F4FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  medicineName: {
-    color: MedsTheme.colors.textMain,
-    fontWeight: '700',
+  emptyTitle: {
+    fontSize: 16,
+    fontFamily: MedsTheme.fonts.sansSemiBold,
+    color: MedsTheme.colors.ink,
   },
-  medicineMeta: {
-    color: MedsTheme.colors.textMuted,
-    fontSize: 12,
-  },
-  statusText: {
-    color: MedsTheme.colors.primaryDark,
-    fontWeight: '700',
-    fontSize: 12,
-    textTransform: 'capitalize',
-  },
-  alertCard: {
-    backgroundColor: '#FFF0F1',
-    borderColor: '#F8CCCF',
-  },
-  alertTitle: {
-    color: '#A92F3F',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  alertText: {
-    color: '#8C4451',
-  },
-  actionRow: {
-    gap: 8,
-  },
-  percent: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: MedsTheme.colors.primaryDark,
-  },
-  timelineRow: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    padding: 10,
-    flexDirection: 'row',
-    gap: 10,
-  },
-  timelineTime: {
-    width: 44,
-    color: MedsTheme.colors.primaryDark,
-    fontWeight: '700',
-  },
-  timelineText: {
-    flex: 1,
-    color: MedsTheme.colors.textMain,
+  emptyText: {
+    fontSize: 14,
+    fontFamily: MedsTheme.fonts.sans,
+    color: MedsTheme.colors.body,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

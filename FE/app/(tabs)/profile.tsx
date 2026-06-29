@@ -8,6 +8,8 @@ import { profileMenuItems } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
 import { useAuth } from '@/store/auth-store';
 
+const { colors, typography, radius, spacing, fonts } = MedsTheme;
+
 export default function ProfileScreen() {
   const { logout } = useAuth();
 
@@ -21,7 +23,7 @@ export default function ProfileScreen() {
         {profileMenuItems.map((item) => (
           <Pressable
             key={item.label}
-            style={({ pressed, hovered }) => [styles.rowButton, (pressed || hovered) && styles.rowButtonActive]}
+            style={({ pressed }) => [styles.rowButton, pressed && styles.rowButtonActive]}
             onPress={() => {
               if (item.route === '/login') {
                 void logout();
@@ -32,10 +34,10 @@ export default function ProfileScreen() {
             <Ionicons
               name={item.icon}
               size={18}
-              color={item.danger ? MedsTheme.colors.danger : MedsTheme.colors.primaryDark}
+              color={item.danger ? colors.critical : colors.ink}
             />
             <Text style={[styles.rowButtonText, item.danger && styles.dangerText]}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={MedsTheme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
         ))}
       </ScrollView>
@@ -46,43 +48,45 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: MedsTheme.colors.appBackground,
+    backgroundColor: colors.canvas,
   },
   content: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
     paddingBottom: 40,
     gap: 10,
   },
   topCard: {
-    borderRadius: 18,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: MedsTheme.colors.card,
-    paddingVertical: 12,
-    marginBottom: 4,
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.surfaceCard,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xxs,
+    ...MedsTheme.elevation.card,
   },
   rowButton: {
     minHeight: 54,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: MedsTheme.colors.card,
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.surfaceCard,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.sm,
+    ...MedsTheme.elevation.card,
   },
   rowButtonActive: {
-    opacity: 0.9,
+    opacity: 0.88,
   },
   rowButtonText: {
     flex: 1,
-    color: MedsTheme.colors.textMain,
-    fontWeight: '600',
-    fontSize: 15,
+    ...typography.titleSm,
+    fontFamily: fonts.sansMedium,
+    color: colors.ink,
   },
   dangerText: {
-    color: MedsTheme.colors.danger,
+    color: colors.critical,
   },
 });

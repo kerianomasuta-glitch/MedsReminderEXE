@@ -9,16 +9,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: MedsTheme.colors.primary,
-        tabBarInactiveTintColor: MedsTheme.colors.textMuted,
+        tabBarActiveTintColor: MedsTheme.colors.ink,
+        tabBarInactiveTintColor: MedsTheme.colors.muted,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarLabelStyle: {
+          fontFamily: MedsTheme.fonts.sansMedium,
+          fontSize: 11,
+        },
         tabBarStyle: {
-          borderTopWidth: 0,
+          borderTopWidth: 1,
+          borderTopColor: MedsTheme.colors.hairline,
           height: 74,
           paddingTop: 8,
           paddingBottom: 10,
-          backgroundColor: MedsTheme.colors.card,
+          backgroundColor: MedsTheme.colors.canvas,
         },
       }}>
       <Tabs.Screen

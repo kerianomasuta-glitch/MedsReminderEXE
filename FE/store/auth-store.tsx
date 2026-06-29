@@ -37,8 +37,10 @@ type RegisterInput = {
   password: string;
 };
 
+type LoginResult = { role: AppRole } | { error: string };
+
 type AuthContextValue = AuthState & {
-  login: (input: LoginInput) => Promise<{ role: AppRole }>;
+  login: (input: LoginInput) => Promise<LoginResult>;
   register: (input: RegisterInput) => Promise<void>;
   setPortal: (portal: AppPortal) => Promise<void>;
   refreshSession: () => Promise<string | null | void>;
@@ -70,6 +72,23 @@ function getRoleFromUser(user: AuthUser | null | undefined): AppRole {
   const roleName = typeof user?.roleId === 'object' ? user?.roleId?.roleName : undefined;
   if (roleName === 'patient') return 'patient';
   return roleName === 'admin' ? 'admin' : 'caregiver';
+}
+
+/** Normalize Mongo user id from auth payload or persisted session. */
+export function resolveAuthUserId(user: AuthUser | null | undefined): string | null {
+  const raw = user?._id;
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw.trim();
+  }
+  if (raw != null && typeof raw === 'object') {
+    const oid = (raw as { $oid?: string }).$oid;
+    if (oid) return oid;
+  }
+  if (raw != null) {
+    const value = String(raw);
+    return value && value !== '[object Object]' ? value : null;
+  }
+  return null;
 }
 
 async function persistSession(params: {
@@ -187,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshSession]);
 
-  const login = useCallback(async (input: LoginInput) => {
+  const login = useCallback(async (input: LoginInput): Promise<LoginResult> => {
     const response =
       input.mode === 'caregiver'
         ? await loginApi({
@@ -198,6 +217,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           caregiverPhone: input.caregiverPhone,
           authPin: input.authPin,
         });
+
+    if (!response.ok) {
+      return { error: response.message };
+    }
+
     const role = getRoleFromUser(response.data.user);
     const portal = role === 'patient' ? 'patient' : null;
 

@@ -46,7 +46,7 @@ export default function CaregiverManagementScreen() {
         <View style={styles.overlay}>
           <SectionCard style={styles.modalCard}>
             <Text style={styles.modalTitle}>Mời người thân</Text>
-            <TextField label="Email hoặc số điện thoại" placeholder="example@mail.com hoặc 09xxxxxxxx" />
+            <TextField label="Email hoặc số điện thoại"  />
             <SectionCard style={styles.codeCard}>
               <Text style={styles.inviteCode}>Mã mời: {caregiverInviteMock.inviteCode}</Text>
               <View style={styles.qrPlaceholder}>
