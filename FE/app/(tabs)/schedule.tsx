@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator, Modal, Alert, Platform, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PatientTabHeader } from '@/components/meds/patient-tab-header';
 import { MedsTheme } from '@/constants/meds-theme';
 import { formatMedicationForm, formatMedicationUsage } from '@/constants/medication-labels';
 import { getMedicationDetailApi } from '@/services/medication-api';
@@ -13,7 +14,7 @@ import {
   getSchedulesByPatientApi,
   updateScheduleApi,
 } from '@/services/schedule-api';
-import { resolveAuthUserId, useAuth } from '@/store/auth-store';
+import { getPatientScheduleNavParams, resolveAuthUserId, useAuth } from '@/store/auth-store';
 
 interface TimeSlot {
   time: string;
@@ -88,6 +89,11 @@ export default function ScheduleScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { accessToken, role, user } = useAuth();
+  const displayPatientName = user?.name?.trim() || 'Bệnh nhân';
+
+  const openNewSchedule = useCallback(() => {
+    router.push({ pathname: '/medicines/new', params: getPatientScheduleNavParams(user) });
+  }, [user]);
 
   const [selectedSchedule, setSelectedSchedule] = useState<MedicationSchedule | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -107,7 +113,6 @@ export default function ScheduleScreen() {
   const [editDaysOfWeekStr, setEditDaysOfWeekStr] = useState<string>('');
   const [editIntervalDays, setEditIntervalDays] = useState<string>('');
   const [editReminderMinutesBefore, setEditReminderMinutesBefore] = useState<string>('');
-  const [editTimezone, setEditTimezone] = useState<string>('');
 
   const fetchSchedules = useCallback(async () => {
     const patientId = resolveAuthUserId(user);
@@ -179,7 +184,6 @@ export default function ScheduleScreen() {
     setEditDaysOfWeekStr((selectedSchedule.daysOfWeek || []).join(', '));
     setEditIntervalDays(selectedSchedule.intervalDays ? String(selectedSchedule.intervalDays) : '1');
     setEditReminderMinutesBefore(selectedSchedule.reminderMinutesBefore !== undefined ? String(selectedSchedule.reminderMinutesBefore) : '5');
-    setEditTimezone(selectedSchedule.timezone || 'Asia/Ho_Chi_Minh');
 
     setIsEditingDetail(true);
   }, [selectedSchedule]);
@@ -217,7 +221,6 @@ export default function ScheduleScreen() {
           daysOfWeek: daysOfWeek.length > 0 ? daysOfWeek : undefined,
           intervalDays: parseInt(editIntervalDays, 10) || undefined,
           reminderMinutesBefore: parseInt(editReminderMinutesBefore, 10) || 5,
-          timezone: editTimezone,
         },
         accessToken,
       );
@@ -245,7 +248,7 @@ export default function ScheduleScreen() {
     } finally {
       setUpdateLoading(false);
     }
-  }, [accessToken, selectedSchedule, editStartDate, editEndDate, editFrequencyType, editTimeSlotsStr, editDaysOfWeekStr, editIntervalDays, editReminderMinutesBefore, editTimezone, fetchSchedules]);
+  }, [accessToken, selectedSchedule, editStartDate, editEndDate, editFrequencyType, editTimeSlotsStr, editDaysOfWeekStr, editIntervalDays, editReminderMinutesBefore, fetchSchedules]);
 
   const handleDeleteSchedule = useCallback(async () => {
     if (!accessToken || !selectedSchedule) return;
@@ -305,6 +308,8 @@ export default function ScheduleScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <PatientTabHeader />
+
         <Text style={styles.title}>Lịch uống thuốc</Text>
         <Text style={styles.subtitle}>Theo dõi danh sách đơn thuốc và lịch uống thuốc của bệnh nhân.</Text>
 
@@ -381,7 +386,7 @@ export default function ScheduleScreen() {
           </View>
         )}
 
-        <Pressable style={styles.primaryButton} onPress={() => router.push('/medicines/new')}>
+        <Pressable style={styles.primaryButton} onPress={openNewSchedule}>
           <Ionicons name="add-circle" size={18} color="#FFFFFF" />
           <Text style={styles.primaryButtonText}>Thêm lịch uống thuốc</Text>
         </Pressable>
@@ -490,15 +495,6 @@ export default function ScheduleScreen() {
                       />
                     </View>
 
-                    <View style={styles.inputWrapper}>
-                      <Text style={styles.inputLabel}>Múi giờ (timezone)</Text>
-                      <TextInput
-                        style={styles.textInput}
-                        value={editTimezone}
-                        onChangeText={setEditTimezone}
-                        placeholder="Asia/Ho_Chi_Minh"
-                      />
-                    </View>
                   </View>
                 ) : (
                   // VIEW DETAILS MODE
@@ -576,15 +572,13 @@ export default function ScheduleScreen() {
 
                     <View style={styles.detailSection}>
                       <Text style={styles.sectionTitle}>Thông tin lịch uống</Text>
-                      {selectedSchedule.patientId && (
-                        <View style={styles.detailRow}>
-                          <Ionicons name="person-outline" size={16} color={MedsTheme.colors.primary} />
-                          <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>patientId: </Text>
-                            {selectedSchedule.patientId}
-                          </Text>
-                        </View>
-                      )}
+                      <View style={styles.detailRow}>
+                        <Ionicons name="person-outline" size={16} color={MedsTheme.colors.primary} />
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Bệnh nhân: </Text>
+                          {displayPatientName}
+                        </Text>
+                      </View>
                       <View style={styles.detailRow}>
                         <Ionicons name="repeat" size={16} color={MedsTheme.colors.primary} />
                         <Text style={styles.detailText}>
@@ -609,15 +603,6 @@ export default function ScheduleScreen() {
                           <Text style={styles.detailText}>
                             <Text style={styles.detailLabel}>Nhắc trước: </Text>
                             {selectedSchedule.reminderMinutesBefore} phút
-                          </Text>
-                        </View>
-                      )}
-                      {selectedSchedule.timezone && (
-                        <View style={styles.detailRow}>
-                          <Ionicons name="globe-outline" size={16} color={MedsTheme.colors.primary} />
-                          <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Múi giờ: </Text>
-                            {selectedSchedule.timezone}
                           </Text>
                         </View>
                       )}

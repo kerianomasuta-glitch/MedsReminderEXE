@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
 import type { MedicationItem, MedicationStatus } from '@/constants/meds-data';
-import { todayMedications } from '@/constants/meds-data';
 
 export type NewMedicationScheduleInput = {
   name: string;
@@ -10,7 +9,7 @@ export type NewMedicationScheduleInput = {
   times: string;
 };
 
-let schedules: MedicationItem[] = [...todayMedications];
+let schedules: MedicationItem[] = [];
 const listeners = new Set<() => void>();
 
 function emitChange() {
