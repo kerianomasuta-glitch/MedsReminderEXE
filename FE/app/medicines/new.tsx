@@ -3,8 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppAlert } from '@/components/meds/app-alert';
+import { DateScrollPicker, EndDateScrollPicker, todayInputValue } from '@/components/meds/date-scroll-picker';
 import { TimeSlotPicker } from '@/components/meds/time-slot-picker';
-import { AppScreen, ChoiceChip, PageHeader, TextField } from '@/components/meds/ui-kit';
+import { AppScreen, ChoiceChip, PageHeader } from '@/components/meds/ui-kit';
 import { formatMedicationForm, formatMedicationUsage } from '@/constants/medication-labels';
 import { MedsTheme } from '@/constants/meds-theme';
 import {
@@ -25,11 +26,7 @@ import {
   type ScheduleFrequencyType,
   type ScheduleTimeSlot,
 } from '@/services/schedule-api';
-import { useAuth } from '@/store/auth-store';
-
-function todayInputValue() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { resolveAuthUserId, useAuth } from '@/store/auth-store';
 
 const FREQUENCY_OPTIONS: ScheduleFrequencyType[] = ['daily', 'weekly', 'interval', 'as_needed'];
 
@@ -48,12 +45,16 @@ const REMINDER_MINUTE_OPTIONS = [0, 5, 10, 15, 30, 45, 60] as const;
 const INTERVAL_DAY_OPTIONS = [1, 2, 3, 4, 5, 7, 10, 14] as const;
 
 export default function NewMedicineScreen() {
-  const { patientId: patientIdParam, patientName } = useLocalSearchParams<{
+  const { patientId: patientIdParam, patientName, prescriptionId: prescriptionIdParam } = useLocalSearchParams<{
     patientId?: string;
     patientName?: string;
+    prescriptionId?: string;
   }>();
 
-  const [patientId, setPatientId] = useState(patientIdParam ?? '');
+  const { accessToken, role, user } = useAuth();
+  const authPatientId = resolveAuthUserId(user);
+
+  const [patientId, setPatientId] = useState(patientIdParam ?? authPatientId ?? '');
   const [prescriptionId, setPrescriptionId] = useState('');
   const [prescriptions, setPrescriptions] = useState<PrescriptionSummary[]>([]);
   const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
@@ -76,16 +77,18 @@ export default function NewMedicineScreen() {
     onClose?: () => void;
   } | null>(null);
 
-  const { accessToken } = useAuth();
-
-  const displayPatientName = patientName?.trim() || 'Bệnh nhân';
+  const displayPatientName = patientName?.trim() || user?.name?.trim() || 'Bệnh nhân';
   const selectedPrescription = prescriptions.find((item) => item._id === prescriptionId);
 
   useEffect(() => {
-    if (patientIdParam) {
-      setPatientId(patientIdParam);
+    if (patientIdParam?.trim()) {
+      setPatientId(patientIdParam.trim());
+      return;
     }
-  }, [patientIdParam]);
+    if (role === 'patient' && authPatientId) {
+      setPatientId(authPatientId);
+    }
+  }, [patientIdParam, role, authPatientId]);
 
   const loadPrescriptions = useCallback(async () => {
     if (!accessToken || !patientId.trim()) {
@@ -110,8 +113,9 @@ export default function NewMedicineScreen() {
 
   const applyPrescriptionPrefill = useCallback((detail: PrescriptionDetail) => {
     setPrescriptionDetail(detail);
-    setStartDate(toDateInputValue(detail.startDate) || todayInputValue());
-    setEndDate(toDateInputValue(detail.endDate));
+    setStartDate(todayInputValue());
+    const prescriptionEnd = toDateInputValue(detail.endDate);
+    setEndDate(prescriptionEnd && prescriptionEnd > todayInputValue() ? prescriptionEnd : '');
     setTimeSlots(buildTimeSlotsFromPrescription(detail));
     setFrequencyType('daily');
   }, []);
@@ -141,6 +145,23 @@ export default function NewMedicineScreen() {
     setPrescriptionId(id);
     void loadPrescriptionDetail(id);
   };
+
+  useEffect(() => {
+    if (prescriptionsLoading || !prescriptions.length || prescriptionId) return;
+
+    const preferredId = prescriptionIdParam?.trim();
+    const autoId =
+      preferredId && prescriptions.some((item) => item._id === preferredId)
+        ? preferredId
+        : prescriptions.length === 1
+          ? prescriptions[0]._id
+          : null;
+
+    if (autoId) {
+      setPrescriptionId(autoId);
+      void loadPrescriptionDetail(autoId);
+    }
+  }, [prescriptions, prescriptionsLoading, prescriptionId, prescriptionIdParam, loadPrescriptionDetail]);
 
   const navigateAfterCreate = useCallback(() => {
     if (patientIdParam) {
@@ -196,6 +217,15 @@ export default function NewMedicineScreen() {
       setAlert({
         title: 'Thiếu thông tin',
         message: 'Khoảng cách ngày phải lớn hơn 0.',
+        tone: 'warning',
+      });
+      return;
+    }
+
+    if (endDate.trim() && endDate.trim() <= startDate) {
+      setAlert({
+        title: 'Thiếu thông tin',
+        message: 'Ngày kết thúc phải là ngày trong tương lai (sau ngày bắt đầu).',
         tone: 'warning',
       });
       return;
@@ -310,14 +340,21 @@ export default function NewMedicineScreen() {
           </View>
         ) : null}
 
-        <View style={styles.row}>
-          <View style={styles.col}>
-            <TextField label="Ngày bắt đầu *" value={startDate} onChangeText={setStartDate} placeholder="YYYY-MM-DD" />
-          </View>
-          <View style={styles.col}>
-            <TextField label="Ngày kết thúc" value={endDate} onChangeText={setEndDate} placeholder="Để trống nếu không giới hạn" />
-          </View>
-        </View>
+        <DateScrollPicker
+          label="Ngày bắt đầu *"
+          hint="Mặc định là hôm nay — ngày tạo lịch uống thuốc"
+          value={startDate}
+          onChange={setStartDate}
+          minDate={todayInputValue()}
+        />
+
+        <EndDateScrollPicker
+          label="Ngày kết thúc"
+          hint="Chọn ngày trong tương lai hoặc để chưa rõ nếu chưa biết khi nào kết thúc"
+          value={endDate}
+          onChange={setEndDate}
+          minDate={startDate}
+        />
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Tần suất uống</Text>
@@ -553,13 +590,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: MedsTheme.fonts.sansMedium,
     color: MedsTheme.colors.textLink,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  col: {
-    flex: 1,
   },
   buttonRow: {
     flexDirection: 'row',

@@ -148,12 +148,9 @@ export const healthOptions = ['Huyết áp', 'Tiểu đường', 'Tim mạch', '
 
 export const profileMenuItems = [
   { label: 'Hồ sơ sức khỏe', icon: 'person-outline', route: '/profile-health', danger: false },
-  { label: 'Quản lý lịch uống', icon: 'calendar-outline', route: '/schedule', danger: false },
   { label: 'Người thân theo dõi', icon: 'people-outline', route: '/caregivers', danger: false },
   { label: 'Lịch tái khám', icon: 'medkit-outline', route: '/appointments', danger: false },
   { label: 'Báo cáo tuân thủ', icon: 'stats-chart-outline', route: '/reports', danger: false },
-  { label: 'Cài đặt thông báo', icon: 'notifications-outline', route: '/settings/notifications', danger: false },
-  { label: 'Hỏi AI', icon: 'sparkles-outline', route: '/ai-assistant', danger: false },
   { label: 'Đăng xuất', icon: 'log-out-outline', route: '/login', danger: true },
 ] as const;
 

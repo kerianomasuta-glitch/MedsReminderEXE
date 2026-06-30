@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PatientTabHeader } from '@/components/meds/patient-tab-header';
 import { MedsTheme } from '@/constants/meds-theme';
 import {
   getPrescriptionErrorMessage,
@@ -64,6 +65,8 @@ export default function PrescriptionsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <PatientTabHeader />
+
         <Text style={styles.title}>Danh sách đơn thuốc</Text>
         <Text style={styles.subtitle}>Quản lý các đơn thuốc điều trị của bệnh nhân.</Text>
 

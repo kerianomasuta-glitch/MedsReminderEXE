@@ -1,22 +1,22 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import { PatientTabHeader } from "@/components/meds/patient-tab-header";
 import { MedicationStatus, MedicationItem } from "@/constants/meds-data";
 import { MedsTheme } from "@/constants/meds-theme";
 import {
-  getPrescriptionErrorMessage,
-  getPrescriptionsByPatientApi,
-  type PrescriptionMedicationRef,
-  type PrescriptionSummary,
-} from "@/services/prescription-api";
-import { useMedicationSchedules } from "@/store/medication-schedule-store";
-import { resolveAuthUserId, useAuth } from "@/store/auth-store";
+  getScheduleErrorMessage,
+  getSchedulesByPatientApi,
+  resolvePrescriptionTitle,
+  type ScheduleSummary,
+} from "@/services/schedule-api";
+import { getPatientScheduleNavParams, resolveAuthUserId, useAuth } from "@/store/auth-store";
 
 const { colors, typography, radius, spacing, fonts } = MedsTheme;
 
@@ -27,25 +27,57 @@ const statusLabel: Record<MedicationStatus, string> = {
   missed: "Bỏ qua",
 };
 
-function getPopulatedMedications(medications?: PrescriptionSummary['medications']): PrescriptionMedicationRef[] {
-  return (medications ?? []).filter(
-    (item): item is PrescriptionMedicationRef =>
-      typeof item === 'object' && item !== null && Boolean(item.name || item._id),
-  );
+function formatTodayDate() {
+  return new Date().toLocaleDateString("vi-VN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function mapSchedulesToTodayItems(schedules: ScheduleSummary[]): MedicationItem[] {
+  const items: MedicationItem[] = [];
+
+  for (const schedule of schedules) {
+    if (schedule.isActive === false) continue;
+
+    const title = resolvePrescriptionTitle(schedule.prescriptionId);
+    const prescriptionId =
+      typeof schedule.prescriptionId === "object"
+        ? schedule.prescriptionId?._id
+        : schedule.prescriptionId;
+
+    for (const [idx, slot] of (schedule.timeSlots ?? []).entries()) {
+      items.push({
+        id: `${schedule._id}-${idx}`,
+        name: title,
+        dose: slot.dosageNote?.trim() || "Theo lịch uống",
+        time: slot.time,
+        icon: "medical",
+        status: "upcoming",
+        note: prescriptionId,
+      });
+    }
+  }
+
+  return items.sort((a, b) => a.time.localeCompare(b.time));
 }
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const fallbackSchedules = useMedicationSchedules();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [displaySchedules, setDisplaySchedules] = useState<MedicationItem[]>([]);
   const { accessToken, role, user } = useAuth();
 
-  const fetchPrescriptionsAndMap = useCallback(async () => {
+  const openNewSchedule = useCallback(() => {
+    router.push({ pathname: "/medicines/new", params: getPatientScheduleNavParams(user) });
+  }, [user]);
+
+  const fetchTodaySchedules = useCallback(async () => {
     const patientId = resolveAuthUserId(user);
-    if (!accessToken || role !== 'patient' || !patientId) {
-      setDisplaySchedules(fallbackSchedules);
+    if (!accessToken || role !== "patient" || !patientId) {
+      setDisplaySchedules([]);
       setError(null);
       setLoading(false);
       return;
@@ -53,46 +85,24 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       setError(null);
-      const response = await getPrescriptionsByPatientApi({ patientId, page: 1, limit: 20 }, accessToken);
-
-      if (response.data.prescriptions?.length) {
-        const mappedList: MedicationItem[] = response.data.prescriptions.flatMap((pres, index) => {
-          const meds = getPopulatedMedications(pres.medications);
-          if (!meds.length) return [];
-
-          const hours = ['08:00 AM', '01:00 PM', '06:00 PM', '09:00 PM'];
-          const statusOptions: MedicationStatus[] = ['taken', 'upcoming', 'missed', 'late'];
-
-          return meds.map((med, medIndex) => ({
-            id: `${pres._id}-${med._id ?? medIndex}-${index}-${medIndex}`,
-            name: med.name ?? 'Thuốc',
-            dose: `${med.dosage ?? ''}${med.form ? ` - dạng ${med.form}` : ''}`.trim() || 'Chưa có liều lượng',
-            time: hours[(index + medIndex) % hours.length],
-            icon: med.form === 'syrup' || med.form === 'suspension' ? 'water' as const : 'medical' as const,
-            status: statusOptions[(index + medIndex) % statusOptions.length],
-            note: pres.note || pres.title,
-          }));
-        });
-
-        setDisplaySchedules(mappedList.length ? mappedList : fallbackSchedules);
-      } else {
-        setDisplaySchedules(fallbackSchedules);
-      }
+      const response = await getSchedulesByPatientApi(patientId, accessToken, { page: 1, limit: 50 });
+      setDisplaySchedules(mapSchedulesToTodayItems(response.data.schedules ?? []));
     } catch (err: unknown) {
-      setError(getPrescriptionErrorMessage(err));
-      setDisplaySchedules(fallbackSchedules);
+      setError(getScheduleErrorMessage(err));
+      setDisplaySchedules([]);
     } finally {
       setLoading(false);
     }
-  }, [accessToken, role, user, fallbackSchedules]);
+  }, [accessToken, role, user]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchPrescriptionsAndMap();
-    }, [fetchPrescriptionsAndMap])
+      void fetchTodaySchedules();
+    }, [fetchTodaySchedules])
   );
 
   const upcoming = displaySchedules.find((item) => item.status === "upcoming") ?? displaySchedules[0];
+  const hasSchedules = displaySchedules.length > 0;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -101,42 +111,14 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: insets.bottom + 132 },
+            { paddingBottom: insets.bottom + 96 },
           ]}
         >
-          <View style={styles.headerRow}>
-            <View style={styles.profileRow}>
-              <View style={styles.avatar}>
-                <Ionicons
-                  name="person"
-                  size={16}
-                  color={colors.ink}
-                />
-              </View>
-              <Text style={styles.userName}>MedsReminder</Text>
-            </View>
-
-            <View style={styles.headerActions}>
-              <Pressable style={styles.iconButton} onPress={() => router.push('/reminder')}>
-                <Ionicons
-                  name="notifications-outline"
-                  size={20}
-                  color={colors.ink}
-                />
-              </Pressable>
-              <Pressable
-                style={styles.sosButton}
-                onPress={() => router.push("/sos")}
-              >
-                <Ionicons name="warning" size={13} color="#FFFFFF" />
-                <Text style={styles.sosButtonText}>SOS</Text>
-              </Pressable>
-            </View>
-          </View>
+          <PatientTabHeader />
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Lịch thuốc hôm nay</Text>
-            <Text style={styles.sectionDate}>Thứ Sáu, 26 Tháng 6</Text>
+            <Text style={styles.sectionDate}>{formatTodayDate()}</Text>
           </View>
 
           {loading ? (
@@ -147,7 +129,7 @@ export default function HomeScreen() {
           ) : error ? (
             <View style={styles.errorBanner}>
               <Ionicons name="warning" size={16} color={colors.critical} />
-              <Text style={styles.errorText}>Dữ liệu ngoại tuyến. Có lỗi khi đồng bộ.</Text>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
@@ -160,7 +142,7 @@ export default function HomeScreen() {
                 </Text>
                 <View style={styles.upcomingBadge}>
                   <Text style={styles.upcomingBadgeText}>
-                    {upcoming ? "Được nhắc nhở" : "Chưa có lịch"}
+                    {upcoming ? "Sắp uống" : "Chưa có lịch"}
                   </Text>
                 </View>
               </View>
@@ -175,19 +157,23 @@ export default function HomeScreen() {
             </View>
 
             <Text style={styles.upcomingName}>{upcoming?.name ?? "Chưa có thuốc"}</Text>
-            <Text style={styles.upcomingDose}>{upcoming?.dose ?? "Hãy thêm lịch uống thuốc mới"}</Text>
+            <Text style={styles.upcomingDose}>
+              {upcoming?.dose ?? "Hãy thêm lịch uống thuốc mới"}
+            </Text>
 
-            {upcoming && (
+            {upcoming ? (
               <Pressable
                 style={styles.doneButton}
                 onPress={() => {
-                  setDisplaySchedules(prev =>
-                    prev.map((item) => item.id === upcoming.id ? { ...item, status: 'taken' as const } : item)
+                  setDisplaySchedules((prev) =>
+                    prev.map((item) =>
+                      item.id === upcoming.id ? { ...item, status: "taken" as const } : item
+                    )
                   );
                 }}>
                 <Text style={styles.doneButtonText}>Đã uống</Text>
               </Pressable>
-            )}
+            ) : null}
           </View>
 
           <View style={styles.dayHeader}>
@@ -197,62 +183,64 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {displaySchedules.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() =>
-                router.push({
-                  pathname: "/medication/[id]",
-                  params: { id: item.id },
-                })
-              }
-              style={[
-                styles.medicationCard,
-                item.status === "missed" && styles.missedCard,
-              ]}
-            >
-              <View style={styles.medicationLeft}>
-                <View style={styles.medicationIcon}>
-                  <Ionicons
-                    name={
-                      item.icon === "water"
-                        ? "water"
-                        : "medkit"
-                    }
-                    size={15}
-                    color={colors.ink}
-                  />
+          {!loading && !hasSchedules ? (
+            <View style={styles.emptyCard}>
+              <Ionicons name="calendar-outline" size={32} color={colors.muted} />
+              <Text style={styles.emptyTitle}>Chưa có lịch uống thuốc</Text>
+              <Text style={styles.emptyText}>Thêm lịch mới để được nhắc uống thuốc đúng giờ.</Text>
+              <Pressable style={styles.emptyButton} onPress={openNewSchedule}>
+                <Text style={styles.emptyButtonText}>Thêm lịch uống thuốc</Text>
+              </Pressable>
+            </View>
+          ) : (
+            displaySchedules.map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => {
+                  if (item.note) {
+                    router.push({
+                      pathname: "/medication/[id]",
+                      params: { id: item.note },
+                    });
+                  }
+                }}
+                style={[
+                  styles.medicationCard,
+                  item.status === "missed" && styles.missedCard,
+                ]}
+              >
+                <View style={styles.medicationLeft}>
+                  <View style={styles.medicationIcon}>
+                    <Ionicons
+                      name={item.icon === "water" ? "water" : "medkit"}
+                      size={15}
+                      color={colors.ink}
+                    />
+                  </View>
+                  <View style={styles.medicationInfo}>
+                    <Text style={styles.medicationName}>{item.name}</Text>
+                    <Text style={styles.medicationDose}>{item.dose}</Text>
+                  </View>
                 </View>
-                <View style={styles.medicationInfo}>
-                  <Text style={styles.medicationName}>{item.name}</Text>
-                  <Text style={styles.medicationDose}>{item.dose}</Text>
-                </View>
-              </View>
 
-              <View style={styles.medicationRight}>
-                <Text style={styles.medicationTime}>{item.time}</Text>
-                <Text
-                  style={[
-                    styles.statusText,
-                    item.status === "taken" && styles.statusTaken,
-                    item.status === "upcoming" && styles.statusUpcoming,
-                    item.status === "late" && styles.statusLate,
-                    item.status === "missed" && styles.statusMissed,
-                  ]}
-                >
-                  {statusLabel[item.status]}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
+                <View style={styles.medicationRight}>
+                  <Text style={styles.medicationTime}>{item.time}</Text>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      item.status === "taken" && styles.statusTaken,
+                      item.status === "upcoming" && styles.statusUpcoming,
+                      item.status === "late" && styles.statusLate,
+                      item.status === "missed" && styles.statusMissed,
+                    ]}
+                  >
+                    {statusLabel[item.status]}
+                  </Text>
+                </View>
+              </Pressable>
+            ))
+          )}
         </ScrollView>
-
-        <Pressable
-          style={[styles.addButton, { bottom: insets.bottom + 74 }]}
-          onPress={() => router.push("/medicines/new")}
-        >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
-        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -270,58 +258,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     gap: spacing.sm + 2,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.xxs + 2,
-  },
-  profileRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.surfaceStrong,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.hairline,
-  },
-  userName: {
-    ...typography.displayMd,
-    fontFamily: fonts.sansSemiBold,
-    color: colors.ink,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  iconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.md,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sosButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xxs,
-    backgroundColor: colors.critical,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    height: 30,
-  },
-  sosButtonText: {
-    color: colors.onPrimary,
-    fontFamily: fonts.sansSemiBold,
-    fontSize: 12,
   },
   sectionHeader: {
     marginBottom: spacing.xxs,
@@ -416,6 +352,39 @@ const styles = StyleSheet.create({
     ...typography.bodySm,
     fontFamily: fonts.sansMedium,
   },
+  emptyCard: {
+    alignItems: "center",
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.base,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.surfaceCard,
+    gap: spacing.xs,
+  },
+  emptyTitle: {
+    ...typography.titleSm,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
+  },
+  emptyText: {
+    ...typography.bodySm,
+    fontFamily: fonts.sans,
+    color: colors.body,
+    textAlign: "center",
+  },
+  emptyButton: {
+    marginTop: spacing.xxs,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  emptyButtonText: {
+    ...typography.button,
+    fontFamily: fonts.sansMedium,
+    color: colors.onPrimary,
+  },
   medicationCard: {
     backgroundColor: colors.surfaceCard,
     borderRadius: radius.lg,
@@ -486,26 +455,11 @@ const styles = StyleSheet.create({
   statusMissed: {
     color: colors.critical,
   },
-  addButton: {
-    position: "absolute",
-    right: spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000000",
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    elevation: 6,
-  },
   loadingContainer: {
     paddingVertical: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.xs,
     backgroundColor: colors.surfaceStrong,
     borderRadius: radius.md,
@@ -518,8 +472,8 @@ const styles = StyleSheet.create({
   errorBanner: {
     paddingVertical: 10,
     paddingHorizontal: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
     backgroundColor: colors.dangerSoft,
     borderRadius: radius.md,

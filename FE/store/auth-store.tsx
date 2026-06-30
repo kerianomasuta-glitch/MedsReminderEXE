@@ -74,7 +74,6 @@ function getRoleFromUser(user: AuthUser | null | undefined): AppRole {
   return roleName === 'admin' ? 'admin' : 'caregiver';
 }
 
-/** Normalize Mongo user id from auth payload or persisted session. */
 export function resolveAuthUserId(user: AuthUser | null | undefined): string | null {
   const raw = user?._id;
   if (typeof raw === 'string' && raw.trim()) {
@@ -89,6 +88,14 @@ export function resolveAuthUserId(user: AuthUser | null | undefined): string | n
     return value && value !== '[object Object]' ? value : null;
   }
   return null;
+}
+
+/** Params for patient/caregiver schedule creation screen. */
+export function getPatientScheduleNavParams(user: AuthUser | null | undefined) {
+  return {
+    patientId: resolveAuthUserId(user) ?? '',
+    patientName: user?.name?.trim() || 'Bệnh nhân',
+  };
 }
 
 async function persistSession(params: {

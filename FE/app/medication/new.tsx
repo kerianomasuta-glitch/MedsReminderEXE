@@ -16,11 +16,7 @@ import {
   createPrescriptionApi,
   getPrescriptionErrorMessage,
 } from '@/services/prescription-api';
-import { useAuth } from '@/store/auth-store';
-
-function todayInputValue() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { resolveAuthUserId, useAuth } from '@/store/auth-store';
 
 export default function NewPrescriptionScreen() {
   const { patientId: patientIdParam, patientName } = useLocalSearchParams<{
@@ -31,9 +27,6 @@ export default function NewPrescriptionScreen() {
   const isCaregiverFlow = Boolean(patientIdParam);
   const [patientId, setPatientId] = useState(patientIdParam ?? '');
   const [title, setTitle] = useState('');
-  const [startDate, setStartDate] = useState(todayInputValue());
-  const [endDate, setEndDate] = useState('');
-  const [prescribedAt, setPrescribedAt] = useState(todayInputValue());
   const [doctorName, setDoctorName] = useState('');
   const [note, setNote] = useState('');
 
@@ -49,17 +42,23 @@ export default function NewPrescriptionScreen() {
 
   const [alert, setAlert] = useState<{ title: string; message: string; onClose?: () => void } | null>(null);
 
-  const { accessToken } = useAuth();
+  const { accessToken, role, user } = useAuth();
+  const authPatientId = resolveAuthUserId(user);
+  const displayPatientName = patientName?.trim() || user?.name?.trim() || 'Bệnh nhân';
   const screenTitle = useMemo(
-    () => (patientName ? `Thêm đơn thuốc — ${patientName}` : 'Thêm đơn thuốc mới'),
-    [patientName],
+    () => (displayPatientName !== 'Bệnh nhân' ? `Thêm đơn thuốc — ${displayPatientName}` : 'Thêm đơn thuốc mới'),
+    [displayPatientName],
   );
 
   useEffect(() => {
-    if (patientIdParam) {
-      setPatientId(patientIdParam);
+    if (patientIdParam?.trim()) {
+      setPatientId(patientIdParam.trim());
+      return;
     }
-  }, [patientIdParam]);
+    if (role === 'patient' && authPatientId) {
+      setPatientId(authPatientId);
+    }
+  }, [patientIdParam, role, authPatientId]);
 
   const fetchAllMedications = useCallback(async () => {
     if (!accessToken || !patientId.trim()) {
@@ -156,9 +155,6 @@ export default function NewPrescriptionScreen() {
           patientId: patientId.trim(),
           title: title.trim() || undefined,
           medications: selectedMedIds,
-          startDate: startDate.trim() || undefined,
-          endDate: endDate.trim() || undefined,
-          prescribedAt: prescribedAt.trim() || undefined,
           doctorName: doctorName.trim() || undefined,
           note: note.trim() || undefined,
         },
@@ -184,20 +180,7 @@ export default function NewPrescriptionScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Tạo đơn thuốc mới</Text>
-          {patientName ? <Text style={styles.cardSubtitle}>Bệnh nhân: {patientName}</Text> : null}
-
-          {!isCaregiverFlow ? (
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Mã bệnh nhân (patientId)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={patientId}
-                onChangeText={setPatientId}
-                placeholder="Nhập mã bệnh nhân"
-                autoCapitalize="none"
-              />
-            </View>
-          ) : null}
+          <Text style={styles.cardSubtitle}>Bệnh nhân: {displayPatientName}</Text>
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Tên đơn thuốc</Text>
@@ -280,21 +263,6 @@ export default function NewPrescriptionScreen() {
                 })}
               </View>
             )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Ngày bắt đầu (YYYY-MM-DD)</Text>
-            <TextInput style={styles.textInput} value={startDate} onChangeText={setStartDate} placeholder="2026-06-25" />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Ngày kết thúc (YYYY-MM-DD)</Text>
-            <TextInput style={styles.textInput} value={endDate} onChangeText={setEndDate} placeholder="Để trống nếu không giới hạn" />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Ngày kê đơn (YYYY-MM-DD)</Text>
-            <TextInput style={styles.textInput} value={prescribedAt} onChangeText={setPrescribedAt} placeholder="2026-06-25" />
           </View>
 
           <View style={styles.inputGroup}>
