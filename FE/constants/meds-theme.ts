@@ -46,6 +46,8 @@ export const MedsTheme = {
 
     // Brand identity — logo, name, slogan (unchanged from brand image)
     brandName: '#1B3D6E',
+    brandNameLight: '#2A5289',
+    brandNameSoft: '#E8F1FA',
     brandSlogan: '#76839A',
 
     // Legacy aliases (used across screens)
@@ -126,6 +128,27 @@ export const MedsTheme = {
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
       elevation: 2,
+    },
+    float: {
+      shadowColor: '#1B3D6E',
+      shadowOpacity: 0.14,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 8,
+    },
+    hero: {
+      shadowColor: '#0C2444',
+      shadowOpacity: 0.32,
+      shadowRadius: 28,
+      shadowOffset: { width: 0, height: 16 },
+      elevation: 14,
+    },
+    dock: {
+      shadowColor: '#1B3D6E',
+      shadowOpacity: 0.2,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 18,
     },
   },
 };

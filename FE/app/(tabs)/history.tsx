@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { DepthCard } from "@/components/meds/depth-ui";
 import { PatientTabHeader } from "@/components/meds/patient-tab-header";
 import { MedsTheme } from "@/constants/meds-theme";
 
@@ -16,12 +17,14 @@ export default function HistoryScreen() {
       >
         <PatientTabHeader />
 
-        <Text style={styles.title}>Lịch sử uống thuốc</Text>
-        <Text style={styles.subtitle}>
-          Xem lại tiến độ và tỷ lệ tuân thủ của bạn.
-        </Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.title}>Lịch sử uống thuốc</Text>
+          <Text style={styles.subtitle}>
+            Xem lại tiến độ và tỷ lệ tuân thủ của bạn.
+          </Text>
+        </View>
 
-        <View style={styles.emptyCard}>
+        <DepthCard style={styles.emptyCard}>
           <View style={styles.emptyIconWrap}>
             <Ionicons name="bar-chart-outline" size={32} color={colors.textLink} />
           </View>
@@ -29,7 +32,7 @@ export default function HistoryScreen() {
           <Text style={styles.emptyText}>
             Lịch sử uống thuốc sẽ hiển thị tại đây sau khi bạn bắt đầu ghi nhận các lần uống thuốc.
           </Text>
-        </View>
+        </DepthCard>
       </ScrollView>
     </SafeAreaView>
   );
@@ -38,40 +41,39 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.canvas,
+    backgroundColor: colors.canvasSoft,
   },
   content: {
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
+    paddingTop: spacing.sm,
     paddingBottom: 40,
   },
+  sectionHeader: {
+    marginBottom: spacing.sm,
+    gap: spacing.xxs,
+  },
   title: {
-    ...typography.displayLg,
+    ...typography.displayMd,
     fontFamily: fonts.sansSemiBold,
     color: colors.ink,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    marginTop: 3,
     ...typography.bodySm,
     fontFamily: fonts.sans,
     color: colors.body,
-    marginBottom: spacing.sm,
   },
   emptyCard: {
     alignItems: "center",
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.base,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.hairlineStrong,
-    backgroundColor: colors.surfaceCard,
     gap: spacing.xs,
   },
   emptyIconWrap: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#E8F4FF",
+    backgroundColor: colors.brandNameSoft,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.xxs,

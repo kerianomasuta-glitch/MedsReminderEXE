@@ -1,186 +1,250 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { DepthButton, DepthCard, StaggerIn } from '@/components/meds/depth-ui';
 import { FeedbackToast } from '@/components/meds/feedback-toast';
-import { ActionButton, AppScreen, ChoiceChip, PageHeader, SectionCard } from '@/components/meds/ui-kit';
+import { DepthChip, SectionLabel, StatTile, SubScreen, SubScreenIntro } from '@/components/meds/sub-screen-ui';
 import { medicineMock, reportChartValues, reportMock } from '@/constants/app-mock';
 import { MedsTheme } from '@/constants/meds-theme';
 
+const { colors, typography, radius, spacing, fonts } = MedsTheme;
+
+const TABS = ['Ngày', 'Tuần', 'Tháng'] as const;
+
 export default function ReportsScreen() {
-  const [tab, setTab] = useState<'Ngày' | 'Tuần' | 'Tháng'>('Tuần');
+  const [tab, setTab] = useState<(typeof TABS)[number]>('Tuần');
   const [filter, setFilter] = useState('Tất cả');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
+  const maxBar = Math.max(...reportChartValues, 1);
+
   return (
-    <AppScreen>
-      <PageHeader title="Báo cáo tuân thủ" subtitle="Theo dõi mức độ tuân thủ theo ngày, tuần hoặc tháng." />
+    <SubScreen paddedBottom={40}>
+      <Stack.Screen options={{ headerStyle: { backgroundColor: colors.canvasSoft } }} />
+      <SubScreenIntro subtitle="Theo dõi mức độ tuân thủ theo ngày, tuần hoặc tháng." />
 
-      <SectionCard>
-        <View style={styles.tabRow}>
-          {(['Ngày', 'Tuần', 'Tháng'] as const).map((item) => (
-            <ChoiceChip key={item} label={item} active={tab === item} onPress={() => setTab(item)} />
-          ))}
-        </View>
-      </SectionCard>
+      <StaggerIn index={0}>
+        <DepthCard style={styles.card}>
+          <View style={styles.tabRow}>
+            {TABS.map((item) => (
+              <DepthChip key={item} label={item} active={tab === item} onPress={() => setTab(item)} />
+            ))}
+          </View>
+        </DepthCard>
+      </StaggerIn>
 
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Tổng quan</Text>
-        <View style={styles.statsRow}>
-          <ReportStat label="Tuân thủ" value={`${reportMock.weeklyPercent}%`} />
-          <ReportStat label="Đúng giờ" value={`${reportMock.onTime}`} />
-          <ReportStat label="Trễ giờ" value={`${reportMock.late}`} />
-          <ReportStat label="Bỏ qua" value={`${reportMock.missed}`} />
-        </View>
-      </SectionCard>
+      <StaggerIn index={1}>
+        <DepthCard style={styles.card}>
+          <SectionLabel text="TỔNG QUAN" />
+          <View style={styles.statsRow}>
+            <StatTile label="Tuân thủ" value={`${reportMock.weeklyPercent}%`} tone="brand" />
+            <StatTile label="Đúng giờ" value={`${reportMock.onTime}`} tone="success" />
+            <StatTile label="Trễ giờ" value={`${reportMock.late}`} tone="warning" />
+            <StatTile label="Bỏ qua" value={`${reportMock.missed}`} tone="danger" />
+          </View>
+        </DepthCard>
+      </StaggerIn>
 
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Biểu đồ đơn giản</Text>
-        <View style={styles.chartRow}>
-          {reportChartValues.map((value, idx) => (
-            <View key={`${value}-${idx}`} style={styles.barWrap}>
-              <View style={[styles.bar, { height: Math.max(28, value) }]} />
-              <Text style={styles.barLabel}>{idx + 1}</Text>
+      <StaggerIn index={2}>
+        <DepthCard style={styles.card}>
+          <SectionLabel text="BIỂU ĐỒ TUÂN THỦ" />
+          <View style={styles.chartBox}>
+            {reportChartValues.map((value, idx) => {
+              const height = Math.max(24, (value / maxBar) * 96);
+              return (
+                <View key={`${value}-${idx}`} style={styles.barWrap}>
+                  <LinearGradient
+                    colors={[colors.brandNameLight, colors.brandName]}
+                    style={[styles.bar, { height }]}
+                  />
+                  <Text style={styles.barLabel}>{idx + 1}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </DepthCard>
+      </StaggerIn>
+
+      <StaggerIn index={3}>
+        <DepthCard style={styles.card}>
+          <SectionLabel text="PHÂN TÍCH THEO THUỐC" />
+          <View style={styles.filterRow}>
+            {['Tất cả', ...medicineMock.map((item) => item.name)].map((name) => (
+              <DepthChip key={name} label={name} active={filter === name} onPress={() => setFilter(name)} />
+            ))}
+          </View>
+
+          {medicineMock.map((item) => (
+            <View key={item.id} style={styles.breakdownRow}>
+              <View style={styles.breakdownHead}>
+                <View style={styles.breakdownIcon}>
+                  <Ionicons name="medkit-outline" size={16} color={colors.brandName} />
+                </View>
+                <Text style={styles.breakdownName}>{item.name}</Text>
+              </View>
+              <View style={styles.breakdownStats}>
+                <Text style={styles.breakdownStatGood}>
+                  Đúng giờ: {item.status === 'missed' ? '70%' : '95%'}
+                </Text>
+                <Text style={styles.breakdownStatBad}>Bỏ qua: {item.status === 'missed' ? 1 : 0}</Text>
+              </View>
             </View>
           ))}
-        </View>
-      </SectionCard>
+        </DepthCard>
+      </StaggerIn>
 
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Phân tích theo thuốc</Text>
-        <View style={styles.filterRow}>
-          {['Tất cả', ...medicineMock.map((item) => item.name)].map((name) => (
-            <ChoiceChip key={name} label={name} active={filter === name} onPress={() => setFilter(name)} />
+      <StaggerIn index={4}>
+        <DepthCard style={styles.card}>
+          <SectionLabel text="TIMELINE CHI TIẾT" />
+          {reportMock.timeline.map((item, index) => (
+            <View
+              key={`${item.time}-${item.event}`}
+              style={[styles.timelineRow, index < reportMock.timeline.length - 1 && styles.timelineBorder]}>
+              <Text style={styles.timelineTime}>{item.time}</Text>
+              <View style={styles.timelineDot} />
+              <Text style={styles.timelineText}>{item.event}</Text>
+            </View>
           ))}
-        </View>
+        </DepthCard>
+      </StaggerIn>
 
-        {medicineMock.map((item) => (
-          <View key={item.id} style={styles.breakdownRow}>
-            <Text style={styles.breakdownName}>{item.name}</Text>
-            <Text style={styles.breakdownStat}>Đúng giờ: {item.status === 'missed' ? '70%' : '95%'}</Text>
-            <Text style={styles.breakdownStat}>Bỏ qua: {item.status === 'missed' ? 1 : 0}</Text>
-          </View>
-        ))}
-      </SectionCard>
-
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Timeline chi tiết</Text>
-        {reportMock.timeline.map((item) => (
-          <View key={`${item.time}-${item.event}`} style={styles.timelineRow}>
-            <Text style={styles.timelineTime}>{item.time}</Text>
-            <Text style={styles.timelineText}>{item.event}</Text>
-          </View>
-        ))}
-      </SectionCard>
-
-      <ActionButton label="Xuất báo cáo" onPress={() => setActionMessage('Đã xuất báo cáo mẫu thành công.')} />
-      <ActionButton
+      <DepthButton
+        label="Xuất báo cáo"
+        tone="brand"
+        icon={<Ionicons name="download-outline" size={18} color={colors.onPrimary} />}
+        onPress={() => setActionMessage('Đã xuất báo cáo mẫu thành công.')}
+      />
+      <DepthButton
         label="Chia sẻ với người thân"
-        tone="secondary"
+        icon={<Ionicons name="share-social-outline" size={18} color={colors.brandName} />}
         onPress={() => setActionMessage('Đã chia sẻ báo cáo mẫu cho người thân.')}
       />
       <FeedbackToast message={actionMessage} tone="info" onHide={() => setActionMessage(null)} />
-    </AppScreen>
-  );
-}
-
-function ReportStat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    </SubScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  card: {
+    padding: spacing.base,
+    gap: spacing.sm,
+  },
   tabRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  sectionTitle: {
-    color: MedsTheme.colors.textMain,
-    fontSize: 19,
-    fontWeight: '800',
+    gap: spacing.xs,
   },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.xs,
+    justifyContent: 'space-between',
   },
-  statCard: {
-    width: '48.5%',
-    borderRadius: 10,
+  chartBox: {
+    minHeight: 130,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: '#F8FBFF',
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  statValue: {
-    color: MedsTheme.colors.primaryDark,
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  statLabel: {
-    color: MedsTheme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  chartRow: {
-    minHeight: 120,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    backgroundColor: '#FFFFFF',
-    padding: 12,
+    borderColor: colors.hairline,
+    backgroundColor: colors.canvasSoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
   barWrap: {
+    flex: 1,
     alignItems: 'center',
     gap: 6,
   },
   bar: {
-    width: 22,
-    borderRadius: 5,
-    backgroundColor: MedsTheme.colors.primary,
+    width: '72%',
+    maxWidth: 28,
+    borderRadius: radius.sm,
+    minHeight: 24,
   },
   barLabel: {
+    ...typography.caption,
+    fontFamily: fonts.sans,
+    color: colors.muted,
     fontSize: 11,
-    color: MedsTheme.colors.textMuted,
   },
   filterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.xs,
   },
   breakdownRow: {
-    borderRadius: 10,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    padding: 10,
-    gap: 2,
+    borderColor: colors.hairlineStrong,
+    backgroundColor: colors.canvasSoft,
+    padding: spacing.sm,
+    gap: spacing.xs,
+  },
+  breakdownHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  breakdownIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.sm,
+    backgroundColor: colors.brandNameSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   breakdownName: {
-    color: MedsTheme.colors.textMain,
-    fontWeight: '700',
+    ...typography.titleSm,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.ink,
   },
-  breakdownStat: {
-    color: MedsTheme.colors.textMuted,
-    fontSize: 13,
+  breakdownStats: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingLeft: 38,
+  },
+  breakdownStatGood: {
+    ...typography.caption,
+    fontFamily: fonts.sansMedium,
+    color: colors.semanticSuccess,
+  },
+  breakdownStatBad: {
+    ...typography.caption,
+    fontFamily: fonts.sansMedium,
+    color: colors.critical,
   },
   timelineRow: {
     flexDirection: 'row',
-    gap: 10,
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  timelineBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
   },
   timelineTime: {
     width: 44,
-    color: MedsTheme.colors.primaryDark,
-    fontWeight: '700',
+    ...typography.caption,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.brandName,
+  },
+  timelineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.brandName,
+    marginTop: 5,
   },
   timelineText: {
     flex: 1,
-    color: MedsTheme.colors.textMain,
+    ...typography.bodySm,
+    fontFamily: fonts.sans,
+    color: colors.ink,
+    lineHeight: 20,
   },
 });
