@@ -310,8 +310,12 @@ export default function ScheduleScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <PatientTabHeader />
 
-        <Text style={styles.title}>Lịch uống thuốc</Text>
-        <Text style={styles.subtitle}>Theo dõi danh sách đơn thuốc và lịch uống thuốc của bệnh nhân.</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.title}>Lịch uống thuốc</Text>
+          <Text style={styles.subtitle}>
+            Theo dõi lịch uống thuốc của {displayPatientName}.
+          </Text>
+        </View>
 
         {loading ? (
           <View style={styles.centerContainer}>
@@ -697,23 +701,27 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: MedsTheme.colors.appBackground,
+    backgroundColor: MedsTheme.colors.canvasSoft,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingHorizontal: MedsTheme.spacing.md,
+    paddingTop: MedsTheme.spacing.sm,
     paddingBottom: 40,
   },
+  sectionHeader: {
+    marginBottom: MedsTheme.spacing.sm,
+    gap: MedsTheme.spacing.xxs,
+  },
   title: {
-    fontSize: 29,
-    fontWeight: '800',
-    color: MedsTheme.colors.textMain,
+    ...MedsTheme.typography.displayMd,
+    fontFamily: MedsTheme.fonts.sansSemiBold,
+    color: MedsTheme.colors.ink,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    marginTop: 4,
-    marginBottom: 18,
-    color: MedsTheme.colors.textMuted,
-    fontSize: 15,
+    ...MedsTheme.typography.bodySm,
+    fontFamily: MedsTheme.fonts.sans,
+    color: MedsTheme.colors.body,
   },
   timeline: {
     gap: 12,
@@ -740,14 +748,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: MedsTheme.colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: MedsTheme.colors.brandName,
+    paddingHorizontal: MedsTheme.spacing.lg,
+    paddingVertical: MedsTheme.spacing.sm,
+    borderRadius: MedsTheme.radius.lg,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: MedsTheme.colors.onPrimary,
+    fontFamily: MedsTheme.fonts.sansSemiBold,
+    ...MedsTheme.typography.button,
   },
   emptyContainer: {
     paddingVertical: 60,
@@ -760,16 +769,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   prescriptionCard: {
-    backgroundColor: MedsTheme.colors.card,
-    borderRadius: 14,
+    backgroundColor: MedsTheme.colors.surfaceCard,
+    borderRadius: MedsTheme.radius.lg,
     borderWidth: 1,
-    borderColor: MedsTheme.colors.border,
-    padding: 16,
-    shadowColor: MedsTheme.colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: MedsTheme.colors.hairlineStrong,
+    padding: MedsTheme.spacing.base,
+    ...MedsTheme.elevation.card,
   },
   cardHeader: {
     flexDirection: 'row',

@@ -115,6 +115,81 @@ export function resolvePrescriptionTitle(
   return 'Đơn thuốc';
 }
 
+export type TodayDoseItem = {
+  id: string;
+  scheduleId: string;
+  prescriptionId?: string;
+  name: string;
+  dose: string;
+  time: string;
+  reminderMinutesBefore?: number;
+};
+
+export type NearestDoseItem = TodayDoseItem & {
+  status: 'upcoming' | 'late';
+};
+
+export function parseSlotTimeMinutes(time: string) {
+  const match = time.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return 0;
+  return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+}
+
+export function formatSlotTimeDisplay(time: string) {
+  const match = time.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return time;
+  const hours = match[1].padStart(2, '0');
+  const minutes = match[2];
+  return `${hours}:${minutes}`;
+}
+
+export function buildTodayDoseItems(schedules: ScheduleSummary[]): TodayDoseItem[] {
+  const items: TodayDoseItem[] = [];
+
+  for (const schedule of schedules) {
+    if (schedule.isActive === false) continue;
+
+    const title = resolvePrescriptionTitle(schedule.prescriptionId);
+    const prescriptionId =
+      typeof schedule.prescriptionId === 'object'
+        ? schedule.prescriptionId?._id
+        : schedule.prescriptionId;
+
+    for (const [idx, slot] of (schedule.timeSlots ?? []).entries()) {
+      items.push({
+        id: `${schedule._id}-${idx}`,
+        scheduleId: schedule._id,
+        prescriptionId: typeof prescriptionId === 'string' ? prescriptionId : undefined,
+        name: title,
+        dose: slot.dosageNote?.trim() || 'Theo lịch uống',
+        time: slot.time,
+        reminderMinutesBefore: schedule.reminderMinutesBefore,
+      });
+    }
+  }
+
+  return items.sort((a, b) => parseSlotTimeMinutes(a.time) - parseSlotTimeMinutes(b.time));
+}
+
+/** Liều gần nhất hôm nay: ưu tiên mốc sắp tới, nếu hết thì mốc trễ gần nhất. */
+export function getNearestDoseFromSchedules(
+  schedules: ScheduleSummary[],
+  now = new Date(),
+): NearestDoseItem | null {
+  const items = buildTodayDoseItems(schedules);
+  if (!items.length) return null;
+
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const upcoming = items.find((item) => parseSlotTimeMinutes(item.time) >= nowMinutes);
+
+  if (upcoming) {
+    return { ...upcoming, status: 'upcoming' };
+  }
+
+  const lastItem = items[items.length - 1];
+  return { ...lastItem, status: 'late' };
+}
+
 export function timeSlotsToInputString(slots: ScheduleTimeSlot[]) {
   return slots
     .map((slot) => `${slot.time.trim()}${slot.dosageNote?.trim() ? ` - ${slot.dosageNote.trim()}` : ''}`)
